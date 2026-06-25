@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { headers } from "next/headers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -7,24 +8,20 @@ import WhatsAppFloat from "@/components/WhatsAppFloat";
 export const metadata: Metadata = {
   title: "Shumitra Exports — Premium Indian Spices & Commodities Exporter",
   description: "Shumitra Exports — Trusted exporter of premium Indian spices and agricultural commodities to 29+ countries. APEDA, FSSAI & ISO 22000 certified.",
-  keywords: "Indian spices exporter, turmeric export, red chilli export, basmati rice export, APEDA certified exporter",
-  openGraph: {
-    title: "Shumitra Exports",
-    description: "Premium Indian spices and commodities. 29+ countries. APEDA certified.",
-    url: "https://shumitra.com",
-    siteName: "Shumitra Exports",
-    type: "website",
-  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAdmin = pathname.startsWith("/admin");
+
   return (
     <html lang="en">
       <body>
-        <Navbar />
+        {!isAdmin && <Navbar />}
         <main>{children}</main>
-        <Footer />
-        <WhatsAppFloat />
+        {!isAdmin && <Footer />}
+        {!isAdmin && <WhatsAppFloat />}
       </body>
     </html>
   );

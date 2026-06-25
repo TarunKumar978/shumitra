@@ -142,13 +142,16 @@ function FeedbackSection() {
     if (rating === 0) return;
     setLoading(true);
     try {
-      await fetch("/api/quote", {
+      await fetch("/api/feedback", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          name: form.name, email: "feedback@shumitra", phone:"", country: form.country,
-          product: `FEEDBACK ${"★".repeat(rating)}${"☆".repeat(5-rating)}`, quantity:"", unit:"", company: form.company,
-          message: `Rating: ${rating}/5 | ${form.message}`
+          name: form.name,
+          company: form.company,
+          country: form.country,
+          rating: rating,
+          message: form.message,
+          approved: false,
         }),
       });
     } catch {}

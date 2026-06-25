@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { product, quantity, unit, name, company, email, phone, country, message } = body;
+  const { product, quantity, unit, name, company, email, phone, country, message, spec, port, incoterm } = body;
 
+  // Save to Supabase
+  const { error: dbError } = await supabase.from("inquiries").insert([{
+    name, email, phone, company, country,
+    product, quantity, unit, spec, port, incoterm, message,
+    status: "new"
+  }]);
+
+  if (dbError) console.error("Supabase error:", dbError);
+
+  // Send email
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -21,14 +37,17 @@ export async function POST(req: NextRequest) {
       </div>
       <div style="padding:28px 32px;">
         <table style="width:100%;border-collapse:collapse;">
-          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Product</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${product || "—"}</td></tr>
-          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Quantity</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${quantity || "—"} ${unit}</td></tr>
-          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Name</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${name}</td></tr>
-          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Company</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${company || "—"}</td></tr>
-          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Email</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${email}</td></tr>
-          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Phone</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${phone || "—"}</td></tr>
-          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Country</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${country || "—"}</td></tr>
-          <tr><td style="padding:10px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Notes</td><td style="padding:10px 0;color:#0D1B2A;">${message || "—"}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;width:140px;">Product</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${product || "—"}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Quantity</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${quantity || "—"} ${unit || ""}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Spec</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${spec || "—"}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Port</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${port || "—"}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Incoterm</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${incoterm || "—"}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Name</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${name}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Company</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${company || "—"}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Email</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${email}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Phone</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${phone || "—"}</td></tr>
+          <tr><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#888;font-size:12px;text-transform:uppercase;">Country</td><td style="padding:10px 0;border-bottom:1px solid rgba(13,27,42,0.1);color:#0D1B2A;font-weight:600;">${country || "—"}</td></tr>
+          <tr><td style="padding:10px 0;color:#888;font-size:12px;text-transform:uppercase;">Notes</td><td style="padding:10px 0;color:#0D1B2A;">${message || "—"}</td></tr>
         </table>
       </div>
       <div style="background:#0D1B2A;padding:16px 32px;text-align:center;">
@@ -40,7 +59,7 @@ export async function POST(req: NextRequest) {
   try {
     await transporter.sendMail({
       from: `"Shumitra Exports Website" <${process.env.SMTP_USER}>`,
-      to: "info@silasya.com, tarun.k@silasya.com",
+      to: "info@silasya.com",
       replyTo: email,
       subject: `Quote Request: ${product} — ${quantity} ${unit} — ${country}`,
       html,
@@ -48,6 +67,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ success: false, error: "Failed to send" }, { status: 500 });
+    // Still return success if saved to DB even if email fails
+    return NextResponse.json({ success: !dbError, error: "Email failed but saved to DB" });
   }
 }
