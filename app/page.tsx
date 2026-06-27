@@ -280,44 +280,51 @@ export default function Home() {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteProduct, setQuoteProduct] = useState("");
   const [quoteModal, setQuoteModal] = useState<{open:boolean;productId:string}>({open:false,productId:""});
-  const [heroImage, setHeroImage] = useState("");
+  const [dbHeroSlides, setDbHeroSlides] = useState<any[]>([]);
   useEffect(() => {
-    fetch("/api/settings").then(r => r.json()).then(d => {
-      if (d.data?.hero_image) setHeroImage(d.data.hero_image);
+    fetch("/api/hero-slides").then(r => r.json()).then(d => {
+      if (d.data?.length) setDbHeroSlides(d.data);
     }).catch(() => {});
   }, []);
 
   const goToSlide = (i: number) => { setSlide(i); setAnimKey(k => k + 1); };
 
   useEffect(() => {
-    const t = setInterval(() => goToSlide((slide + 1) % slides.length), 5000);
+    const t = setInterval(() => goToSlide((slide + 1) % activeSlides.length), 5000);
     return () => clearInterval(t);
   }, [slide]);
 
-  const cur = slides[slide];
+  const activeSlides = dbHeroSlides.length > 0 ? dbHeroSlides : slides;
+  const cur = activeSlides[slide % activeSlides.length] || activeSlides[0];
 
   return (
     <>
       {/* HERO */}
       <section style={{ position:"relative", height:"100vh", minHeight:"640px", overflow:"hidden" }}>
-        <video autoPlay muted loop playsInline
-          poster={heroImage || undefined}
-          onError={e => { (e.currentTarget as HTMLVideoElement).style.display="none"; }}
-          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:0 }}>
-          <source src="/hero.mp4" type="video/mp4" />
-        </video>
-        {!heroImage && (
-          <div style={{ position:"absolute", inset:0, background:"#0D1B2A", zIndex:-1 }} />
+        {/* Slide background — video or image from DB, fallback to gradient */}
+        {cur.video_url ? (
+          <video key={cur.video_url} autoPlay muted loop playsInline
+            style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:0 }}>
+            <source src={cur.video_url} type="video/mp4" />
+          </video>
+        ) : cur.image_url ? (
+          <img key={cur.image_url} src={cur.image_url} alt=""
+            style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:0 }} />
+        ) : (
+          <>
+            <video autoPlay muted loop playsInline
+              onError={e => { (e.currentTarget as HTMLVideoElement).style.display="none"; }}
+              style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:0 }}>
+              <source src="/hero.mp4" type="video/mp4" />
+            </video>
+            <div style={{ position:"absolute", inset:0, background:cur.bg||"#0D1B2A", zIndex:-1, transition:"background 1.5s ease" }} />
+          </>
         )}
-        {heroImage && (
-          <img src={heroImage} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:-1 }} />
-        )}
-        <div style={{ position:"absolute", inset:0, zIndex:0, background:cur.bg, transition:"background 1.5s ease" }} />
         <div style={{ position:"absolute", inset:0, zIndex:1, opacity:0.06, backgroundImage:"linear-gradient(rgba(255,255,255,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.8) 1px,transparent 1px)", backgroundSize:"80px 80px" }} />
-        <div key={`emoji-${animKey}`} style={{ position:"absolute", right:"8%", top:"50%", transform:"translateY(-50%)", fontSize:"clamp(180px,22vw,320px)", lineHeight:1, zIndex:2, opacity:0.18, filter:"blur(2px)", animation:"floatBig 6s ease-in-out infinite", userSelect:"none", pointerEvents:"none" }}>{cur.emoji}</div>
-        <div style={{ position:"absolute", right:"5%", top:"30%", width:"500px", height:"500px", borderRadius:"50%", background:`radial-gradient(circle,${cur.accent}20,transparent 65%)`, filter:"blur(80px)", zIndex:1, transition:"background 1.5s ease", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", inset:0, zIndex:3, background:"linear-gradient(to bottom,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.1) 35%,rgba(0,0,0,0.1) 55%,rgba(0,0,0,0.75) 100%)" }} />
-        <div style={{ position:"absolute", inset:0, zIndex:3, background:"linear-gradient(to right,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.05) 55%,transparent 100%)" }} />
+
+        <div style={{ position:"absolute", right:"5%", top:"30%", width:"500px", height:"500px", borderRadius:"50%", background:`radial-gradient(circle,${(cur.accent||cur.accent_color||"#C4930A")}20,transparent 65%)`, filter:"blur(80px)", zIndex:1, transition:"background 1.5s ease", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", inset:0, zIndex:3, background:"linear-gradient(to bottom,rgba(0,0,0,0.25) 0%,transparent 25%,transparent 65%,rgba(0,0,0,0.55) 100%)" }} />
+        <div style={{ position:"absolute", inset:0, zIndex:3, background:"linear-gradient(to right,rgba(0,0,0,0.4) 0%,transparent 45%)" }} />
 
         {/* TOP CONTENT */}
         <div style={{ position:"absolute", top:0, left:0, right:0, zIndex:10, padding:"96px 64px 0" }}>
@@ -325,8 +332,8 @@ export default function Home() {
             <span style={{ width:"6px", height:"6px", background:"#C4930A", borderRadius:"50%", animation:"pulse 1.5s ease-in-out infinite" }} />
             <span style={{ color:"#E8A020", fontSize:"10px", fontWeight:700, letterSpacing:"0.18em", textTransform:"uppercase" }}>FSSAI · APEDA · Spices Board · ISO 9001:2015</span>
           </div>
-          <div key={`label-${animKey}`} style={{ display:"inline-flex", marginLeft:"12px", background:`${cur.accent}25`, border:`1px solid ${cur.accent}50`, borderRadius:"50px", padding:"5px 14px", verticalAlign:"middle", animation:"fadeSlideIn 0.6s ease" }}>
-            <span style={{ color:cur.accent, fontSize:"10px", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>{cur.label}</span>
+          <div key={`label-${animKey}`} style={{ display:"inline-flex", marginLeft:"12px", background:`${cur.accent||cur.accent_color||"#C4930A"}25`, border:`1px solid ${cur.accent||cur.accent_color||"#C4930A"}50`, borderRadius:"50px", padding:"5px 14px", verticalAlign:"middle", animation:"fadeSlideIn 0.6s ease" }}>
+            <span style={{ color:cur.accent||cur.accent_color||"#C4930A", fontSize:"10px", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>{cur.label}</span>
           </div>
           <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", color:"white", lineHeight:1.0, margin:"16px 0 18px", fontSize:"clamp(44px,6vw,84px)", fontWeight:400, textShadow:"0 4px 40px rgba(0,0,0,0.7)", maxWidth:"720px" }}>
             India's Finest<br />
@@ -363,10 +370,15 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <div style={{ display:"flex", gap:"6px", alignItems:"center", background:"rgba(0,0,0,0.3)", backdropFilter:"blur(10px)", borderRadius:"50px", padding:"8px 14px", border:"1px solid rgba(255,255,255,0.1)" }}>
-              {slides.map((s, i) => (
+            <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
+              {activeSlides.map((s: any, i: number) => (
                 <button key={i} onClick={() => goToSlide(i)}
-                  style={{ width: i === slide ? "26px" : "7px", height:"7px", borderRadius:"4px", background: i === slide ? "#C4930A" : "rgba(255,255,255,0.3)", border:"none", cursor:"pointer", transition:"all 0.4s ease", padding:0 }} />
+                  style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:"4px", background:"rgba(0,0,0,0.35)", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"10px", padding:"8px 14px", cursor:"pointer", minWidth:"80px", transition:"all 0.3s", opacity: i === slide ? 1 : 0.55 }}>
+                  <span style={{ color:"white", fontSize:"11px", fontWeight: i === slide ? 700 : 500, whiteSpace:"nowrap" as const, overflow:"hidden", textOverflow:"ellipsis", maxWidth:"90px" }}>{s.label||s.name}</span>
+                  <div style={{ width:"100%", height:"2px", background:"rgba(255,255,255,0.2)", borderRadius:"2px", overflow:"hidden" }}>
+                    <div style={{ height:"100%", background:"#C4930A", borderRadius:"2px", width: i === slide ? "100%" : "0%", transition: i === slide ? "width 5s linear" : "none" }} />
+                  </div>
+                </button>
               ))}
             </div>
           </div>

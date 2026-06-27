@@ -3,9 +3,8 @@ import { useState, useEffect } from "react";
 import MediaUpload from "@/components/MediaUpload";
 import { products as initialProducts } from "@/lib/data";
 import type { Product } from "@/lib/data";
-import { Plus, Edit, Trash2, Eye, EyeOff, Mail, X, Save, Star, MessageSquare, FileText, Check, LayoutDashboard, Package, ChevronRight , Play } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Mail, X, Save, Star, MessageSquare, FileText, Check, LayoutDashboard, Package, ChevronRight, Play, Users } from "lucide-react";
 
-const ADMIN_PASSWORD = "shumitra2025";
 
 type Inquiry = { id: string; name: string; product: string; quantity: string; unit: string; country: string; email: string; phone: string; company: string; spec: string; port: string; incoterm: string; message: string; created_at: string; status: string; };
 type FeedbackEntry = { id: string; name: string; company: string; country: string; rating: number; message: string; approved: boolean; created_at: string; };
@@ -18,9 +17,26 @@ const cream = "#F5F0E8";
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
-  const [pw, setPw] = useState("");
-  const [pwError, setPwError] = useState(false);
-  const [tab, setTab] = useState<"dashboard"|"products"|"inquiries"|"feedback"|"testimonials"|"catalogue"|"hero">("dashboard");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [forgotMsg, setForgotMsg] = useState("");
+  const [members, setMembers] = useState<any[]>([]);
+  const [addingMember, setAddingMember] = useState(false);
+  const [memberForm, setMemberForm] = useState({ name:"", email:"", password:"", role:"admin" });
+  const [sessionId, setSessionId] = useState<number|null>(null);
+  const [sessionStart, setSessionStart] = useState<Date|null>(null);
+  const [sessionTime, setSessionTime] = useState("0m");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [tab, setTab] = useState<"dashboard"|"products"|"inquiries"|"feedback"|"testimonials"|"catalogue"|"hero"|"team">("dashboard");
   const [prods, setProds] = useState<Product[]>(initialProducts);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
@@ -37,6 +53,24 @@ export default function AdminPage() {
   const [editingT, setEditingT] = useState<Testimonial|null>(null);
   const [tForm, setTForm] = useState({ name:"", company:"", country:"", role:"", rating:5, message:"", active:true });
   const [catalogueFile, setCatalogueFile] = useState<File|null>(null);
+  const [dbHeroSlides, setDbHeroSlides] = useState<any[]>([]);
+  const [addingHeroSlide, setAddingHeroSlide] = useState(false);
+  const [editingHeroSlide, setEditingHeroSlide] = useState<number|null>(null);
+  const [heroSlideForm, setHeroSlideForm] = useState<any>({ label:"", subtitle:"", image_url:"", video_url:"", accent_color:"#C4930A" });
+  const fetchHeroSlides = async () => {
+    const res = await fetch("/api/hero-slides");
+    const data = await res.json();
+    if (data.data) setDbHeroSlides(data.data);
+  };
+  const [heroSlides, setHeroSlides] = useState([
+    { emoji:"🟡", label:"India's Golden Spice",  accent:"#f59e0b", bg:"linear-gradient(135deg,#1a0a00,#c2570a,#e8820a)" },
+    { emoji:"🌶️", label:"The Fire of India",      accent:"#f87171", bg:"linear-gradient(135deg,#1a0000,#b91c1c,#ef4444)" },
+    { emoji:"⚫", label:"King of Spices",          accent:"#d6d3d1", bg:"linear-gradient(135deg,#0a0a0a,#44403c,#78716c)" },
+    { emoji:"🟤", label:"Warm & Earthy Aroma",    accent:"#fbbf24", bg:"linear-gradient(135deg,#0a0800,#92400e,#b45309)" },
+    { emoji:"🌾", label:"India's Premium Grain",  accent:"#86efac", bg:"linear-gradient(135deg,#020d00,#15803d,#22c55e)" },
+    { emoji:"💚", label:"Queen of Spices",         accent:"#6ee7b7", bg:"linear-gradient(135deg,#001a0a,#059669,#34d399)" },
+  ]);
+  const [editingSlide, setEditingSlide] = useState<number|null>(null);
   const [catalogueMsg, setCatalogueMsg] = useState("");
   const [toast, setToast] = useState("");
 
@@ -56,9 +90,22 @@ export default function AdminPage() {
     if (tData.data) setTestimonials(tData.data);
     if (prodData.data) setDbProducts(prodData.data);
     setLoading(false);
+    fetchHeroSlides();
   };
 
   useEffect(() => { if (authed) fetchAll(); }, [authed]);
+
+  // Session timer
+  useEffect(() => {
+    if (!authed || !sessionStart) return;
+    const t = setInterval(() => {
+      const mins = Math.floor((Date.now() - sessionStart.getTime()) / 60000);
+      const hrs = Math.floor(mins / 60);
+      setSessionTime(hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m`);
+    }, 30000);
+    setSessionTime("0m");
+    return () => clearInterval(t);
+  }, [authed, sessionStart]);
 
   const newCount = inquiries.filter(i => i.status === "new").length;
   const pendingFeedback = feedback.filter(f => !f.approved).length;
@@ -70,22 +117,138 @@ export default function AdminPage() {
   );
 
   if (!authed) return (
-    <div style={{ minHeight:"100vh", background:ink, display:"flex", alignItems:"center", justifyContent:"center", padding:"24px" }}>
-      <div style={{ background:"white", borderRadius:"24px", padding:"48px 40px", width:"100%", maxWidth:"400px", boxShadow:"0 32px 80px rgba(0,0,0,0.4)" }}>
+    <div style={{ minHeight:"100vh", background:"#0D1B2A", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(rgba(196,147,10,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(196,147,10,0.03) 1px,transparent 1px)", backgroundSize:"60px 60px" }} />
+      <div style={{ position:"absolute", top:"-100px", right:"-100px", width:"400px", height:"400px", borderRadius:"50%", background:"radial-gradient(circle,rgba(196,147,10,0.08),transparent 70%)" }} />
+
+      <div style={{ background:"white", borderRadius:"28px", padding:"48px 44px", width:"100%", maxWidth:"420px", boxShadow:"0 40px 100px rgba(0,0,0,0.5)", position:"relative", zIndex:1 }}>
         <div style={{ textAlign:"center", marginBottom:"36px" }}>
-          <img src="/logo.jpeg" alt="Shumitra" style={{ width:"64px", height:"64px", borderRadius:"16px", objectFit:"contain", margin:"0 auto 16px", display:"block" }} />
-          <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"24px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Admin Panel</h1>
-          <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"13px", margin:0 }}>Shumitra Exports · Silasya Fusion Pvt Ltd</p>
+          <img src="/logo.jpeg" alt="Shumitra" style={{ width:"72px", height:"72px", borderRadius:"18px", objectFit:"contain", margin:"0 auto 16px", display:"block", border:"2px solid rgba(196,147,10,0.2)" }} />
+          <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"26px", color:ink, margin:"0 0 6px", fontWeight:400 }}>
+            {forgotMode ? "Forgot Password" : resetMode ? "Reset Password" : "Admin Login"}
+          </h1>
+          <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"13px", margin:0 }}>Shumitra Exports · Silasya Fusion</p>
         </div>
-        <form onSubmit={e => { e.preventDefault(); if (pw === ADMIN_PASSWORD) { setAuthed(true); setPwError(false); } else setPwError(true); }}>
-          <label style={{ fontSize:"12px", fontWeight:700, color:"rgba(13,27,42,0.5)", textTransform:"uppercase", letterSpacing:"0.1em", display:"block", marginBottom:"8px" }}>Password</label>
-          <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Enter admin password"
-            style={{ ...inputStyle, marginBottom: pwError ? "6px" : "20px", border: pwError ? "1px solid #ef4444" : `1px solid rgba(13,27,42,0.15)` }} />
-          {pwError && <p style={{ color:"#ef4444", fontSize:"12px", marginBottom:"16px" }}>Incorrect password.</p>}
-          <button type="submit" style={{ width:"100%", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"13px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"15px" }}>
-            Sign In
-          </button>
-        </form>
+
+        {/* LOGIN FORM */}
+        {!forgotMode && !resetMode && (
+          <div>
+            <div style={{ marginBottom:"16px" }}>
+              <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", textTransform:"uppercase", letterSpacing:"0.1em", display:"block", marginBottom:"8px" }}>Email</label>
+              <input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+                placeholder="Enter your email" autoComplete="off"
+                style={{ ...inputStyle, border: loginError ? "1px solid #ef4444" : "1px solid rgba(13,27,42,0.15)" }}
+                onKeyDown={e => e.key === "Enter" && document.getElementById("loginBtn")?.click()} />
+            </div>
+            <div style={{ marginBottom:"8px" }}>
+              <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", textTransform:"uppercase", letterSpacing:"0.1em", display:"block", marginBottom:"8px" }}>Password</label>
+              <div style={{ position:"relative" }}>
+                <input type={showPassword ? "text" : "password"} value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
+                  placeholder="••••••••" autoComplete="new-password"
+                  style={{ ...inputStyle, border: loginError ? "1px solid #ef4444" : "1px solid rgba(13,27,42,0.15)", paddingRight:"48px" }}
+                  onKeyDown={e => { if (e.key === "Enter") document.getElementById("loginBtn")?.click(); }} />
+                <button type="button" onClick={() => setShowPassword(s => !s)}
+                  style={{ position:"absolute", right:"14px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"rgba(13,27,42,0.4)", fontSize:"13px", fontWeight:600, padding:0 }}>
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+            {loginError && <p style={{ color:"#ef4444", fontSize:"12px", margin:"6px 0 12px" }}>{loginError}</p>}
+            <button onClick={() => setForgotMode(true)}
+              style={{ background:"none", border:"none", color:gold, fontSize:"12px", fontWeight:600, cursor:"pointer", padding:"0 0 20px", display:"block" }}>
+              Forgot password?
+            </button>
+            <button id="loginBtn" disabled={loginLoading} onClick={async () => {
+              if (!loginEmail || !loginPassword) return setLoginError("Please enter email and password");
+              setLoginLoading(true); setLoginError("");
+              const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({ action:"login", email:loginEmail, password:loginPassword }) });
+              const data = await res.json();
+              setLoginLoading(false);
+              if (data.success) {
+              setAuthed(true);
+              setCurrentUser(data.user);
+              setSessionId(data.session_id);
+              setSessionStart(new Date());
+            }
+              else setLoginError(data.error || "Invalid credentials");
+            }} style={{ width:"100%", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"14px", borderRadius:"12px", border:"none", cursor: loginLoading ? "not-allowed" : "pointer", fontSize:"15px", opacity: loginLoading ? 0.7 : 1 }}>
+              {loginLoading ? "Signing in..." : "Sign In →"}
+            </button>
+          </div>
+        )}
+
+        {/* FORGOT PASSWORD */}
+        {forgotMode && !resetMode && (
+          <div>
+            <p style={{ color:"rgba(13,27,42,0.55)", fontSize:"13px", lineHeight:1.7, marginBottom:"20px" }}>
+              Enter your admin email and we'll send a reset token to your inbox.
+            </p>
+            <div style={{ marginBottom:"16px" }}>
+              <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", textTransform:"uppercase", letterSpacing:"0.1em", display:"block", marginBottom:"8px" }}>Email</label>
+              <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                placeholder="tarun.k@silasya.com"
+                style={{ ...inputStyle, border:"1px solid rgba(13,27,42,0.15)" }} />
+            </div>
+            {forgotMsg && <p style={{ color: forgotMsg.includes("✅") ? "#16a34a" : "#ef4444", fontSize:"13px", marginBottom:"12px" }}>{forgotMsg}</p>}
+            <div style={{ display:"flex", gap:"10px" }}>
+              <button onClick={async () => {
+                if (!forgotEmail) return setForgotMsg("Enter your email");
+                setForgotMsg("Sending...");
+                const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                  body: JSON.stringify({ action:"forgot", email:forgotEmail }) });
+                const data = await res.json();
+                if (data.success) { setForgotMsg("✅ Reset token sent! Check your email."); setTimeout(() => setResetMode(true), 1500); }
+                else setForgotMsg(data.error || "Failed to send");
+              }} style={{ flex:1, background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"12px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"14px" }}>
+                Send Reset Token
+              </button>
+              <button onClick={() => { setForgotMode(false); setForgotMsg(""); }}
+                style={{ padding:"12px 18px", background:"none", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"12px", cursor:"pointer", fontSize:"14px", color:"rgba(13,27,42,0.5)" }}>Back</button>
+            </div>
+            <button onClick={() => setResetMode(true)}
+              style={{ background:"none", border:"none", color:gold, fontSize:"12px", fontWeight:600, cursor:"pointer", padding:"14px 0 0", display:"block" }}>
+              Already have a token? Reset now →
+            </button>
+          </div>
+        )}
+
+        {/* RESET PASSWORD */}
+        {resetMode && (
+          <div>
+            <p style={{ color:"rgba(13,27,42,0.55)", fontSize:"13px", lineHeight:1.7, marginBottom:"20px" }}>
+              Enter the 8-character token from your email and your new password.
+            </p>
+            <div style={{ marginBottom:"14px" }}>
+              <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", textTransform:"uppercase", letterSpacing:"0.1em", display:"block", marginBottom:"8px" }}>Reset Token</label>
+              <input value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())}
+                placeholder="ABCD1234" maxLength={8}
+                style={{ ...inputStyle, border:"1px solid rgba(13,27,42,0.15)", letterSpacing:"4px", fontWeight:700, fontSize:"16px" }} />
+            </div>
+            <div style={{ marginBottom:"16px" }}>
+              <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", textTransform:"uppercase", letterSpacing:"0.1em", display:"block", marginBottom:"8px" }}>New Password</label>
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min 8 characters"
+                style={{ ...inputStyle, border:"1px solid rgba(13,27,42,0.15)" }} />
+            </div>
+            {forgotMsg && <p style={{ color: forgotMsg.includes("✅") ? "#16a34a" : "#ef4444", fontSize:"13px", marginBottom:"12px" }}>{forgotMsg}</p>}
+            <div style={{ display:"flex", gap:"10px" }}>
+              <button onClick={async () => {
+                if (!resetToken || !newPassword) return setForgotMsg("Fill all fields");
+                if (newPassword.length < 8) return setForgotMsg("Password must be at least 8 characters");
+                const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                  body: JSON.stringify({ action:"reset", token:resetToken, newPassword }) });
+                const data = await res.json();
+                if (data.success) { setForgotMsg("✅ Password reset! Please login."); setTimeout(() => { setResetMode(false); setForgotMode(false); setForgotMsg(""); }, 1500); }
+                else setForgotMsg(data.error || "Reset failed");
+              }} style={{ flex:1, background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"12px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"14px" }}>
+                Reset Password
+              </button>
+              <button onClick={() => { setResetMode(false); setForgotMode(false); setForgotMsg(""); }}
+                style={{ padding:"12px 18px", background:"none", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"12px", cursor:"pointer", fontSize:"14px", color:"rgba(13,27,42,0.5)" }}>Cancel</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -98,6 +261,7 @@ export default function AdminPage() {
     { id:"testimonials", icon:<MessageSquare size={16}/>,   label:"Testimonials" },
     { id:"catalogue",    icon:<FileText size={16}/>,        label:"Catalogue" },
     { id:"hero",         icon:<Play size={16}/>,            label:"Hero Section" },
+    { id:"team",         icon:<Users size={16}/>,           label:"Team & Access" },
   ];
 
   return (
@@ -499,99 +663,304 @@ export default function AdminPage() {
         )}
 
 
-        {/* HERO SECTION */}
+                {/* HERO SECTION */}
         {tab === "hero" && (
           <div style={{ padding:"40px 48px" }}>
             <div style={{ marginBottom:"32px" }}>
               <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"32px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Hero Section</h1>
-              <p style={{ color:"rgba(13,27,42,0.45)", margin:0, fontSize:"14px" }}>Upload the homepage hero background video and fallback image</p>
+              <p style={{ color:"rgba(13,27,42,0.45)", margin:0, fontSize:"14px" }}>Manage homepage hero slides — each with its own image or video</p>
             </div>
 
-            {/* Hero Video */}
-            <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px", marginBottom:"20px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"6px" }}>
-                <span style={{ fontSize:"24px" }}>🎬</span>
-                <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:0, fontWeight:400 }}>Background Video</h3>
-              </div>
-              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>Plays fullscreen behind the homepage hero. Recommended: landscape MP4, 1920×1080, under 50MB.</p>
-              <div style={{ background:"#0D1B2A", borderRadius:"16px", overflow:"hidden", marginBottom:"20px", maxWidth:"560px" }}>
-                <video autoPlay muted loop playsInline style={{ width:"100%", maxHeight:"260px", objectFit:"cover", display:"block" }}>
-                  <source src="/hero.mp4" type="video/mp4" />
-                </video>
-                <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"11px", margin:0, padding:"10px 16px" }}>Current hero video — click below to replace</p>
-              </div>
-              <div style={{ background:"rgba(196,147,10,0.04)", border:"1px solid rgba(196,147,10,0.15)", borderRadius:"14px", padding:"20px" }}>
-                <p style={{ fontSize:"12px", fontWeight:700, color:gold, margin:"0 0 12px", textTransform:"uppercase", letterSpacing:"0.08em" }}>
-                  👆 Click the area below to upload — file saves automatically
-                </p>
-                <MediaUpload
-                  label="Hero Video"
-                  accept="video/mp4,video/mov,video/avi"
-                  folder="hero"
-                  onUpload={async (url) => {
-                    await fetch("/api/settings", {
-                      method:"POST",
-                      headers:{"Content-Type":"application/json"},
-                      body: JSON.stringify({ key_name:"hero_video", value:url })
-                    });
-                    showToast("✅ Hero video updated! Refresh homepage to see it.");
-                  }}
-                  type="video"
-                />
-              </div>
+            {/* Slides list */}
+            <div style={{ display:"flex", flexDirection:"column", gap:"16px", marginBottom:"24px" }}>
+              {dbHeroSlides.map((slide: any) => (
+                <div key={slide.id} style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", overflow:"hidden" }}>
+                  {editingHeroSlide === slide.id ? (
+                    <div style={{ padding:"24px" }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"14px", marginBottom:"16px" }}>
+                        <div>
+                          <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Slide Label *</label>
+                          <input value={heroSlideForm.label||""} onChange={e => setHeroSlideForm((f:any) => ({...f, label:e.target.value}))}
+                            placeholder="e.g. India's Golden Spice"
+                            style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", outline:"none", boxSizing:"border-box" as const }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Subtitle</label>
+                          <input value={heroSlideForm.subtitle||""} onChange={e => setHeroSlideForm((f:any) => ({...f, subtitle:e.target.value}))}
+                            placeholder="e.g. Premium Export Grade"
+                            style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", outline:"none", boxSizing:"border-box" as const }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Accent Color</label>
+                          <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                            <input type="color" value={heroSlideForm.accent_color||"#C4930A"} onChange={e => setHeroSlideForm((f:any) => ({...f, accent_color:e.target.value}))}
+                              style={{ width:"48px", height:"38px", borderRadius:"8px", border:"1px solid rgba(13,27,42,0.15)", cursor:"pointer" }} />
+                            <span style={{ fontSize:"13px", color:"rgba(13,27,42,0.5)" }}>{heroSlideForm.accent_color||"#C4930A"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"16px", marginBottom:"16px" }}>
+                        <MediaUpload label="Slide Image" accept="image/jpeg,image/png,image/webp" folder="hero-slides"
+                          currentUrl={heroSlideForm.image_url||""}
+                          onUpload={url => setHeroSlideForm((f:any) => ({...f, image_url:url}))} type="image" />
+                        <MediaUpload label="Slide Video (optional)" accept="video/mp4,video/mov" folder="hero-slides"
+                          currentUrl={heroSlideForm.video_url||""}
+                          onUpload={url => setHeroSlideForm((f:any) => ({...f, video_url:url}))} type="video" />
+                      </div>
+                      <div style={{ display:"flex", gap:"10px" }}>
+                        <button onClick={async () => {
+                          const res = await fetch("/api/hero-slides", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: slide.id, ...heroSlideForm }) });
+                          const data = await res.json();
+                          if (data.success) { await fetchHeroSlides(); setEditingHeroSlide(null); showToast("✅ Slide updated!"); }
+                          else showToast("❌ " + data.error);
+                        }} style={{ padding:"11px 24px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, border:"none", borderRadius:"10px", cursor:"pointer", fontSize:"13px" }}>
+                          Save Changes
+                        </button>
+                        <button onClick={() => setEditingHeroSlide(null)} style={{ padding:"11px 18px", background:"none", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", cursor:"pointer", fontSize:"13px", color:"rgba(13,27,42,0.5)" }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display:"flex", alignItems:"center", gap:"16px", padding:"16px 20px" }}>
+                      {/* Preview */}
+                      <div style={{ width:"80px", height:"56px", borderRadius:"10px", overflow:"hidden", flexShrink:0, background:"#0D1B2A", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        {slide.image_url ? (
+                          <img src={slide.image_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                        ) : slide.video_url ? (
+                          <span style={{ fontSize:"24px" }}>🎬</span>
+                        ) : (
+                          <span style={{ fontSize:"24px" }}>🖼️</span>
+                        )}
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <p style={{ fontWeight:700, color:ink, fontSize:"15px", margin:"0 0 3px" }}>{slide.label}</p>
+                        {slide.subtitle && <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"12px", margin:"0 0 6px" }}>{slide.subtitle}</p>}
+                        <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
+                          <div style={{ width:"20px", height:"4px", borderRadius:"2px", background:slide.accent_color||gold }} />
+                          {slide.image_url && <span style={{ fontSize:"10px", color:"rgba(13,27,42,0.4)", fontWeight:600 }}>📷 Has image</span>}
+                          {slide.video_url && <span style={{ fontSize:"10px", color:"rgba(13,27,42,0.4)", fontWeight:600 }}>🎬 Has video</span>}
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:"8px" }}>
+                        <button onClick={() => { setEditingHeroSlide(slide.id); setHeroSlideForm({ label:slide.label, subtitle:slide.subtitle||"", image_url:slide.image_url||"", video_url:slide.video_url||"", accent_color:slide.accent_color||"#C4930A" }); }}
+                          style={{ padding:"8px 16px", border:"1px solid rgba(196,147,10,0.3)", background:"rgba(196,147,10,0.08)", borderRadius:"10px", cursor:"pointer", fontSize:"12px", fontWeight:600, color:gold }}>Edit</button>
+                        <button onClick={async () => {
+                          if (!confirm("Delete this slide?")) return;
+                          await fetch("/api/hero-slides", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: slide.id }) });
+                          await fetchHeroSlides();
+                          showToast("🗑️ Slide deleted");
+                        }} style={{ padding:"8px 16px", border:"1px solid #fecaca", background:"#fef2f2", borderRadius:"10px", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Delete</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
-            {/* Hero Fallback Image */}
-            <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px", marginBottom:"20px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"6px" }}>
-                <span style={{ fontSize:"24px" }}>🖼️</span>
-                <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:0, fontWeight:400 }}>Fallback Image</h3>
-              </div>
-              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>Shown when the video can't load (slow connection or mobile). Recommended: landscape JPG, 1920×1080.</p>
-              <div style={{ background:"rgba(196,147,10,0.04)", border:"1px solid rgba(196,147,10,0.15)", borderRadius:"14px", padding:"20px" }}>
-                <p style={{ fontSize:"12px", fontWeight:700, color:gold, margin:"0 0 12px", textTransform:"uppercase", letterSpacing:"0.08em" }}>
-                  👆 Click below to upload fallback image
-                </p>
-                <MediaUpload
-                  label="Fallback Image"
-                  accept="image/jpeg,image/png,image/webp"
-                  folder="hero"
-                  onUpload={async (url) => {
-                    await fetch("/api/settings", {
-                      method:"POST",
-                      headers:{"Content-Type":"application/json"},
-                      body: JSON.stringify({ key_name:"hero_image", value:url })
-                    });
-                    showToast("✅ Fallback image saved!");
-                  }}
-                  type="image"
-                />
-              </div>
-            </div>
-
-            {/* Hero Slides */}
-            <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px" }}>
-              <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Active Hero Slides</h3>
-              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 16px" }}>These product slides auto-rotate in the hero section.</p>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px" }}>
-                {[
-                  { emoji:"🌿", label:"Turmeric", color:"#C4930A" },
-                  { emoji:"🌶️", label:"Red Chilli", color:"#C0392B" },
-                  { emoji:"⚫", label:"Black Pepper", color:"#2C2C2C" },
-                  { emoji:"🌾", label:"Cumin", color:"#8B6914" },
-                  { emoji:"☕", label:"Coffee", color:"#3E1C00" },
-                  { emoji:"🍚", label:"Rice", color:"#C4930A" },
-                ].map(s => (
-                  <div key={s.label} style={{ background:"#0D1B2A", borderRadius:"12px", padding:"16px 20px", display:"flex", alignItems:"center", gap:"12px" }}>
-                    <span style={{ fontSize:"24px" }}>{s.emoji}</span>
-                    <div>
-                      <p style={{ color:"white", fontWeight:600, fontSize:"13px", margin:"0 0 4px" }}>{s.label}</p>
-                      <div style={{ width:"32px", height:"3px", borderRadius:"2px", background:s.color }} />
+            {/* Add new slide */}
+            {addingHeroSlide ? (
+              <div style={{ background:"white", borderRadius:"20px", border:`1px solid rgba(196,147,10,0.25)`, padding:"24px" }}>
+                <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 20px", fontWeight:400 }}>New Hero Slide</h3>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"14px", marginBottom:"16px" }}>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Slide Label *</label>
+                    <input value={heroSlideForm.label||""} onChange={e => setHeroSlideForm((f:any) => ({...f, label:e.target.value}))}
+                      placeholder="e.g. India's Golden Spice"
+                      style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", outline:"none", boxSizing:"border-box" as const }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Subtitle</label>
+                    <input value={heroSlideForm.subtitle||""} onChange={e => setHeroSlideForm((f:any) => ({...f, subtitle:e.target.value}))}
+                      placeholder="e.g. Premium Export Grade"
+                      style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", outline:"none", boxSizing:"border-box" as const }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Accent Color</label>
+                    <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                      <input type="color" value={heroSlideForm.accent_color||"#C4930A"} onChange={e => setHeroSlideForm((f:any) => ({...f, accent_color:e.target.value}))}
+                        style={{ width:"48px", height:"38px", borderRadius:"8px", border:"1px solid rgba(13,27,42,0.15)", cursor:"pointer" }} />
+                      <span style={{ fontSize:"13px", color:"rgba(13,27,42,0.5)" }}>{heroSlideForm.accent_color||"#C4930A"}</span>
                     </div>
                   </div>
-                ))}
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"16px", marginBottom:"16px" }}>
+                  <MediaUpload label="Slide Image" accept="image/jpeg,image/png,image/webp" folder="hero-slides"
+                    onUpload={url => setHeroSlideForm((f:any) => ({...f, image_url:url}))} type="image" />
+                  <MediaUpload label="Slide Video (optional)" accept="video/mp4,video/mov" folder="hero-slides"
+                    onUpload={url => setHeroSlideForm((f:any) => ({...f, video_url:url}))} type="video" />
+                </div>
+                <div style={{ display:"flex", gap:"10px" }}>
+                  <button onClick={async () => {
+                    if (!heroSlideForm.label) return showToast("❌ Label is required");
+                    const res = await fetch("/api/hero-slides", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(heroSlideForm) });
+                    const data = await res.json();
+                    if (data.success) { await fetchHeroSlides(); setAddingHeroSlide(false); setHeroSlideForm({ label:"", subtitle:"", image_url:"", video_url:"", accent_color:"#C4930A" }); showToast("✅ Slide added!"); }
+                    else showToast("❌ " + data.error);
+                  }} style={{ padding:"11px 24px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, border:"none", borderRadius:"10px", cursor:"pointer", fontSize:"13px" }}>
+                    <Save size={14} style={{ display:"inline", marginRight:"6px" }} /> Save Slide
+                  </button>
+                  <button onClick={() => { setAddingHeroSlide(false); setHeroSlideForm({ label:"", subtitle:"", image_url:"", video_url:"", accent_color:"#C4930A" }); }}
+                    style={{ padding:"11px 18px", background:"none", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", cursor:"pointer", fontSize:"13px", color:"rgba(13,27,42,0.5)" }}>Cancel</button>
+                </div>
               </div>
+            ) : (
+              <button onClick={() => { setAddingHeroSlide(true); setHeroSlideForm({ label:"", subtitle:"", image_url:"", video_url:"", accent_color:"#C4930A" }); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"13px 24px", borderRadius:"14px", border:"none", cursor:"pointer", fontSize:"14px" }}>
+                <Plus size={16}/> Add New Hero Slide
+              </button>
+            )}
+
+            {dbHeroSlides.length === 0 && !addingHeroSlide && (
+              <div style={{ textAlign:"center", padding:"48px", background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", marginTop:"16px" }}>
+                <p style={{ fontSize:"48px", marginBottom:"12px" }}>🖼️</p>
+                <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"15px", marginBottom:"16px" }}>No hero slides yet. Add your first slide with a product image or video.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TEAM & ACCESS */}
+        {tab === "team" && (
+          <div style={{ padding:"40px 48px" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"32px" }}>
+              <div>
+                <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"32px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Team & Access</h1>
+                <p style={{ color:"rgba(13,27,42,0.45)", margin:0, fontSize:"14px" }}>Manage admin panel members and permissions</p>
+              </div>
+              {currentUser?.role === "super_admin" && (
+                <button onClick={async () => {
+                  const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                  const data = await res.json();
+                  if (data.data) setMembers(data.data);
+                  setAddingMember(true);
+                }} style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"11px 22px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"13px" }}>
+                  <Plus size={15}/> Add Member
+                </button>
+              )}
             </div>
+
+            {/* Current user card */}
+            <div style={{ background:`rgba(196,147,10,0.06)`, borderRadius:"20px", border:`1px solid rgba(196,147,10,0.2)`, padding:"20px 24px", marginBottom:"20px", display:"flex", alignItems:"center", gap:"16px" }}>
+              <div style={{ width:"48px", height:"48px", borderRadius:"50%", background:`linear-gradient(135deg,${gold},${goldLight})`, display:"flex", alignItems:"center", justifyContent:"center", color:"white", fontWeight:700, fontSize:"18px", flexShrink:0 }}>
+                {currentUser?.name?.charAt(0)||"A"}
+              </div>
+              <div>
+                <p style={{ fontWeight:700, color:ink, fontSize:"15px", margin:"0 0 2px" }}>{currentUser?.name} <span style={{ fontSize:"11px", background:gold, color:"white", borderRadius:"6px", padding:"2px 8px", marginLeft:"6px", fontWeight:600 }}>{currentUser?.role?.replace("_"," ").toUpperCase()}</span></p>
+                <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:0 }}>{currentUser?.email} · Currently logged in</p>
+              </div>
+              <button onClick={async () => {
+                if (sessionId) {
+                  await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({ action:"logout", session_id:sessionId, email:currentUser?.email }) });
+                }
+                setAuthed(false); setCurrentUser(null); setLoginEmail(""); setLoginPassword("");
+                setSessionId(null); setSessionStart(null); setSessionTime("0m"); setShowPassword(false);
+              }}
+                style={{ marginLeft:"auto", padding:"8px 16px", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:"10px", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>
+                Sign Out
+              </button>
+            </div>
+
+            {/* Members list */}
+            <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", overflow:"hidden", marginBottom:"20px" }}>
+              <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(13,27,42,0.06)" }}>
+                <button onClick={async () => {
+                  const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                  const data = await res.json();
+                  if (data.data) setMembers(data.data);
+                }} style={{ background:"none", border:"none", cursor:"pointer", color:gold, fontSize:"13px", fontWeight:600 }}>↻ Load Members</button>
+              </div>
+              {members.length === 0 ? (
+                <div style={{ padding:"40px", textAlign:"center", color:"rgba(13,27,42,0.35)", fontSize:"14px" }}>Click "Load Members" to see all admin users</div>
+              ) : (
+                <div>
+                  {members.map((m: any) => (
+                    <div key={m.id} style={{ display:"flex", alignItems:"center", gap:"16px", padding:"16px 24px", borderBottom:"1px solid rgba(13,27,42,0.05)", opacity: m.active ? 1 : 0.5 }}>
+                      <div style={{ width:"40px", height:"40px", borderRadius:"50%", background: m.role === "super_admin" ? `linear-gradient(135deg,${gold},${goldLight})` : "rgba(13,27,42,0.08)", display:"flex", alignItems:"center", justifyContent:"center", color: m.role === "super_admin" ? "white" : ink, fontWeight:700, fontSize:"16px", flexShrink:0 }}>
+                        {m.name?.charAt(0)}
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <p style={{ fontWeight:600, color:ink, fontSize:"14px", margin:"0 0 3px" }}>
+                          {m.name}
+                          <span style={{ fontSize:"10px", fontWeight:700, padding:"2px 8px", borderRadius:"6px", marginLeft:"8px", background: m.role === "super_admin" ? `rgba(196,147,10,0.1)` : "rgba(13,27,42,0.06)", color: m.role === "super_admin" ? gold : "rgba(13,27,42,0.5)" }}>
+                            {m.role?.replace("_"," ").toUpperCase()}
+                          </span>
+                          {!m.active && <span style={{ fontSize:"10px", color:"#ef4444", marginLeft:"6px" }}>INACTIVE</span>}
+                          {m.active_since && <span style={{ fontSize:"10px", color:"#16a34a", marginLeft:"6px", fontWeight:600 }}>● ONLINE NOW</span>}
+                        </p>
+                        <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"12px", margin:"0 0 4px" }}>{m.email}</p>
+                        <div style={{ display:"flex", gap:"12px" }}>
+                          {m.last_login && <span style={{ fontSize:"11px", color:"rgba(13,27,42,0.35)" }}>Last login: {new Date(m.last_login).toLocaleDateString("en-IN", {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span>}
+                          {m.total_time_minutes > 0 && <span style={{ fontSize:"11px", color:"rgba(13,27,42,0.35)" }}>Total: {Math.floor(m.total_time_minutes/60) > 0 ? `${Math.floor(m.total_time_minutes/60)}h ` : ""}{m.total_time_minutes%60}m</span>}
+                          {m.total_sessions > 0 && <span style={{ fontSize:"11px", color:"rgba(13,27,42,0.35)" }}>{m.total_sessions} sessions</span>}
+                        </div>
+                      </div>
+                      {currentUser?.role === "super_admin" && m.role !== "super_admin" && m.active === 1 && (
+                        <button onClick={async () => {
+                          if (!confirm(`Remove ${m.name} from admin access?`)) return;
+                          await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"remove_member", email:m.email }) });
+                          const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                          const data = await res.json();
+                          if (data.data) setMembers(data.data);
+                          showToast("🗑️ Member removed");
+                        }} style={{ padding:"7px 14px", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:"8px", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Remove</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add member form */}
+            {addingMember && (
+              <div style={{ background:"white", borderRadius:"20px", border:`1px solid rgba(196,147,10,0.25)`, padding:"28px" }}>
+                <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 20px", fontWeight:400 }}>Add New Member</h3>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"14px", marginBottom:"14px" }}>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Full Name</label>
+                    <input value={memberForm.name} onChange={e => setMemberForm(f => ({...f, name:e.target.value}))}
+                      placeholder="Richa Kumar" style={{ ...inputStyle, border:"1px solid rgba(13,27,42,0.15)" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Email</label>
+                    <input type="email" value={memberForm.email} onChange={e => setMemberForm(f => ({...f, email:e.target.value}))}
+                      placeholder="richa.k@silasya.com" style={{ ...inputStyle, border:"1px solid rgba(13,27,42,0.15)" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Password</label>
+                    <input type="password" value={memberForm.password} onChange={e => setMemberForm(f => ({...f, password:e.target.value}))}
+                      placeholder="Min 8 characters" style={{ ...inputStyle, border:"1px solid rgba(13,27,42,0.15)" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Role</label>
+                    <select value={memberForm.role} onChange={e => setMemberForm(f => ({...f, role:e.target.value}))}
+                      style={{ ...inputStyle, border:"1px solid rgba(13,27,42,0.15)", cursor:"pointer" }}>
+                      <option value="admin">Admin</option>
+                      <option value="super_admin">Super Admin</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:"10px" }}>
+                  <button onClick={async () => {
+                    if (!memberForm.name || !memberForm.email || !memberForm.password) return showToast("❌ Fill all fields");
+                    if (memberForm.password.length < 8) return showToast("❌ Password min 8 characters");
+                    const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"add_member", ...memberForm }) });
+                    const data = await res.json();
+                    if (data.success) {
+                      showToast("✅ Member added!");
+                      setAddingMember(false);
+                      setMemberForm({ name:"", email:"", password:"", role:"admin" });
+                      const r2 = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                      const d2 = await r2.json();
+                      if (d2.data) setMembers(d2.data);
+                    } else showToast("❌ " + data.error);
+                  }} style={{ padding:"11px 24px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, border:"none", borderRadius:"10px", cursor:"pointer", fontSize:"13px" }}>
+                    <Save size={14} style={{ display:"inline", marginRight:"6px" }} /> Add Member
+                  </button>
+                  <button onClick={() => setAddingMember(false)}
+                    style={{ padding:"11px 18px", background:"none", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", cursor:"pointer", fontSize:"13px", color:"rgba(13,27,42,0.5)" }}>Cancel</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
