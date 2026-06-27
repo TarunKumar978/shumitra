@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     await transporter.sendMail({
       from: `"Shumitra Exports" <${smtpUser}>`,
-      to: "tarun.k@silasya.com",
+      to: "tarun.k@silasya.com, info@silasya.com",
       replyTo: email,
       subject: `New Quote Request: ${product} — ${name} — ${country}`,
       html: `

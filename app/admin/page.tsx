@@ -15,9 +15,35 @@ const gold = "#C4930A";
 const goldLight = "#E8A020";
 const cream = "#F5F0E8";
 
+function adminFetch(url: string, options: RequestInit = {}) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") || "" : "";
+  return fetch(url, {
+    ...options,
+    headers: {
+      "x-admin-token": token,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    },
+  });
+}
+
+function isTokenValid(): boolean {
+  if (typeof window === "undefined") return false;
+  const token = localStorage.getItem("adminToken");
+  const userStr = localStorage.getItem("adminUser");
+  if (!token || !userStr) return false;
+  try {
+    const decoded = atob(token);
+    const [, timestamp] = decoded.split(":");
+    const age = Date.now() - parseInt(timestamp);
+    return age < 5 * 60 * 60 * 1000; // 5 hours
+  } catch { return false; }
+}
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -93,7 +119,44 @@ export default function AdminPage() {
     fetchHeroSlides();
   };
 
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    if (isTokenValid()) {
+      try {
+        const u = localStorage.getItem("adminUser");
+        const s = localStorage.getItem("adminSessionId");
+        if (u) setCurrentUser(JSON.parse(u));
+        if (s) setSessionId(parseInt(s));
+        setAuthed(true);
+        setSessionStart(new Date());
+      } catch {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminUser");
+        localStorage.removeItem("adminSessionId");
+      }
+    }
+  }, []);
+
   useEffect(() => { if (authed) fetchAll(); }, [authed]);
+
+  // Auto-logout after 5 hours
+  useEffect(() => {
+    if (!authed) return;
+    const checkExpiry = setInterval(() => {
+      if (!isTokenValid()) {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminUser");
+        localStorage.removeItem("adminSessionId");
+        setAuthed(false);
+        setCurrentUser(null);
+        setSessionId(null);
+        setSessionStart(null);
+        setSessionTime("0m");
+        alert("Your session has expired. Please log in again.");
+      }
+    }, 60000); // check every minute
+    return () => clearInterval(checkExpiry);
+  }, [authed]);
 
   // Session timer
   useEffect(() => {
@@ -161,7 +224,7 @@ export default function AdminPage() {
             <button id="loginBtn" disabled={loginLoading} onClick={async () => {
               if (!loginEmail || !loginPassword) return setLoginError("Please enter email and password");
               setLoginLoading(true); setLoginError("");
-              const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+              const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
                 body: JSON.stringify({ action:"login", email:loginEmail, password:loginPassword }) });
               const data = await res.json();
               setLoginLoading(false);
@@ -170,10 +233,11 @@ export default function AdminPage() {
               setCurrentUser(data.user);
               setSessionId(data.session_id);
               setSessionStart(new Date());
-              // Generate admin token for API calls
               const tokenData = `${data.user.email}:${Date.now()}`;
               const token = btoa(tokenData);
               localStorage.setItem("adminToken", token);
+              localStorage.setItem("adminUser", JSON.stringify(data.user));
+              localStorage.setItem("adminSessionId", String(data.session_id));
             }
               else setLoginError(data.error || "Invalid credentials");
             }} style={{ width:"100%", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"14px", borderRadius:"12px", border:"none", cursor: loginLoading ? "not-allowed" : "pointer", fontSize:"15px", opacity: loginLoading ? 0.7 : 1 }}>
@@ -199,7 +263,7 @@ export default function AdminPage() {
               <button onClick={async () => {
                 if (!forgotEmail) return setForgotMsg("Enter your email");
                 setForgotMsg("Sending...");
-                const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
                   body: JSON.stringify({ action:"forgot", email:forgotEmail }) });
                 const data = await res.json();
                 if (data.success) { setForgotMsg("✅ Reset token sent! Check your email."); setTimeout(() => setResetMode(true), 1500); }
@@ -240,7 +304,7 @@ export default function AdminPage() {
               <button onClick={async () => {
                 if (!resetToken || !newPassword) return setForgotMsg("Fill all fields");
                 if (newPassword.length < 8) return setForgotMsg("Password must be at least 8 characters");
-                const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
                   body: JSON.stringify({ action:"reset", token:resetToken, newPassword }) });
                 const data = await res.json();
                 if (data.success) { setForgotMsg("✅ Password reset! Please login."); setTimeout(() => { setResetMode(false); setForgotMode(false); setForgotMsg(""); }, 1500); }
@@ -857,6 +921,8 @@ export default function AdminPage() {
                     body: JSON.stringify({ action:"logout", session_id:sessionId, email:currentUser?.email }) });
                 }
                 localStorage.removeItem("adminToken");
+                localStorage.removeItem("adminUser");
+                localStorage.removeItem("adminSessionId");
                 setAuthed(false); setCurrentUser(null); setLoginEmail(""); setLoginPassword("");
                 setSessionId(null); setSessionStart(null); setSessionTime("0m"); setShowPassword(false);
               }}

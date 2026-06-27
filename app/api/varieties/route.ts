@@ -6,13 +6,16 @@ const db = mysql.createPool({ host:"localhost", user:"root", password:"Shumitra@
 // Check admin token
 function isAdminAuthed(req: Request): boolean {
   const token = req.headers.get("x-admin-token");
-  if (!token) return false;
+  if (!token || token === "test") return false;
   try {
     const decoded = Buffer.from(token, "base64").toString("utf8");
-    const [email, timestamp] = decoded.split(":");
-    if (!email || !timestamp) return false;
-    if (Date.now() - parseInt(timestamp) > 86400000) return false; // 24h expiry
-    return email.includes("@");
+    const parts = decoded.split(":");
+    if (parts.length < 2) return false;
+    const [email, timestamp] = parts;
+    if (!email || !email.includes("@")) return false;
+    if (!timestamp || isNaN(parseInt(timestamp))) return false;
+    if (Date.now() - parseInt(timestamp) > 18000000) return false;
+    return true;
   } catch { return false; }
 }
 
