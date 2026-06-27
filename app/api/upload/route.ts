@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,25 +11,27 @@ export async function POST(req: NextRequest) {
     if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
 
     const ext = file.name.split(".").pop();
-    const fileName = `${folder}/${Date.now()}.${ext}`;
+    const fileName = `${Date.now()}.${ext}`;
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const { data, error } = await supabase.storage
-      .from("shumitra-media")
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        upsert: true,
-      });
+    // Special case: hero video → save as /public/hero.mp4
+    if (folder === "hero") {
+      const heroPath = path.join(process.cwd(), "public", "hero.mp4");
+      await writeFile(heroPath, buffer);
+      return NextResponse.json({ success: true, url: "/hero.mp4" });
+    }
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // All other uploads → save to /public/uploads/<folder>/
+    const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+    await mkdir(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, fileName);
+    await writeFile(filePath, buffer);
 
-    const { data: urlData } = supabase.storage
-      .from("shumitra-media")
-      .getPublicUrl(fileName);
+    const url = `/uploads/${folder}/${fileName}`;
+    return NextResponse.json({ success: true, url });
 
-    return NextResponse.json({ success: true, url: urlData.publicUrl });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

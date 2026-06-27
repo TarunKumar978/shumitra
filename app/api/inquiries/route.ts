@@ -1,27 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import mysql from "mysql2/promise";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const db = mysql.createPool({ host:"localhost", user:"root", password:"", database:"shumitra" });
 
 export async function GET() {
-  const { data, error } = await supabase.from("inquiries").select("*").order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
+  try {
+    const [data] = await db.query("SELECT * FROM inquiries ORDER BY created_at DESC") as any[];
+    return NextResponse.json({ data });
+  } catch (e: any) { return NextResponse.json({ error: e.message }, { status:500 }); }
 }
-
 export async function PATCH(req: NextRequest) {
-  const { id, ...updates } = await req.json();
-  const { error } = await supabase.from("inquiries").update(updates).eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+  try {
+    const { id, ...updates } = await req.json();
+    const fields = Object.keys(updates).map(k => `${k} = ?`).join(", ");
+    await db.query(`UPDATE inquiries SET ${fields} WHERE id = ?`, [...Object.values(updates), id]);
+    return NextResponse.json({ success: true });
+  } catch (e: any) { return NextResponse.json({ error: e.message }, { status:500 }); }
 }
-
 export async function DELETE(req: NextRequest) {
-  const { id } = await req.json();
-  const { error } = await supabase.from("inquiries").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+  try {
+    const { id } = await req.json();
+    await db.query("DELETE FROM inquiries WHERE id = ?", [id]);
+    return NextResponse.json({ success: true });
+  } catch (e: any) { return NextResponse.json({ error: e.message }, { status:500 }); }
 }

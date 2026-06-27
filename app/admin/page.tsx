@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import MediaUpload from "@/components/MediaUpload";
 import { products as initialProducts } from "@/lib/data";
 import type { Product } from "@/lib/data";
-import { Plus, Edit, Trash2, Eye, EyeOff, Mail, X, Save, Star, MessageSquare, FileText, Check, LayoutDashboard, Package, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Mail, X, Save, Star, MessageSquare, FileText, Check, LayoutDashboard, Package, ChevronRight , Play } from "lucide-react";
 
 const ADMIN_PASSWORD = "shumitra2025";
 
@@ -19,7 +20,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState(false);
-  const [tab, setTab] = useState<"dashboard"|"products"|"inquiries"|"feedback"|"testimonials"|"catalogue">("dashboard");
+  const [tab, setTab] = useState<"dashboard"|"products"|"inquiries"|"feedback"|"testimonials"|"catalogue"|"hero">("dashboard");
   const [prods, setProds] = useState<Product[]>(initialProducts);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
@@ -28,6 +29,9 @@ export default function AdminPage() {
   const [hidden, setHidden] = useState<string[]>([]);
   const [addingVariety, setAddingVariety] = useState<string|null>(null);
   const [newVariety, setNewVariety] = useState<any>({});
+  const [editingVariety, setEditingVariety] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [addingProduct, setAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ name:"", category:"spices", emoji:"🌿", tagline:"", description:"", heroImage:"" });
   const [editingT, setEditingT] = useState<Testimonial|null>(null);
@@ -40,15 +44,17 @@ export default function AdminPage() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [inqRes, fbRes, tRes] = await Promise.all([
+    const [inqRes, fbRes, tRes, prodRes] = await Promise.all([
       fetch("/api/inquiries"),
       fetch("/api/feedback"),
       fetch("/api/testimonials"),
+      fetch("/api/products"),
     ]);
-    const [inqData, fbData, tData] = await Promise.all([inqRes.json(), fbRes.json(), tRes.json()]);
+    const [inqData, fbData, tData, prodData] = await Promise.all([inqRes.json(), fbRes.json(), tRes.json(), prodRes.json()]);
     if (inqData.data) setInquiries(inqData.data);
     if (fbData.data) setFeedback(fbData.data);
     if (tData.data) setTestimonials(tData.data);
+    if (prodData.data) setDbProducts(prodData.data);
     setLoading(false);
   };
 
@@ -91,6 +97,7 @@ export default function AdminPage() {
     { id:"feedback",     icon:<Star size={16}/>,            label:`Feedback${pendingFeedback > 0 ? ` (${pendingFeedback})` : ""}` },
     { id:"testimonials", icon:<MessageSquare size={16}/>,   label:"Testimonials" },
     { id:"catalogue",    icon:<FileText size={16}/>,        label:"Catalogue" },
+    { id:"hero",         icon:<Play size={16}/>,            label:"Hero Section" },
   ];
 
   return (
@@ -145,12 +152,15 @@ export default function AdminPage() {
               <>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"16px", marginBottom:"32px" }}>
                   {[
-                    { label:"Total Products",    value:prods.length,                               sub:"in catalogue",        hot:false },
-                    { label:"New Inquiries",     value:newCount,                                   sub:"awaiting response",   hot:true },
-                    { label:"Pending Feedback",  value:pendingFeedback,                            sub:"awaiting approval",   hot:false },
-                    { label:"Live Testimonials", value:testimonials.filter(t => t.active).length,  sub:"shown on homepage",   hot:false },
+                    { label:"Total Products",    value:prods.length + dbProducts.length,           sub:"in catalogue",        hot:false, tab:"products" },
+                    { label:"New Inquiries",     value:newCount,                                   sub:"awaiting response",   hot:true,  tab:"inquiries" },
+                    { label:"Pending Feedback",  value:pendingFeedback,                            sub:"awaiting approval",   hot:false, tab:"feedback" },
+                    { label:"Live Testimonials", value:testimonials.filter(t => t.active).length,  sub:"shown on homepage",   hot:false, tab:"testimonials" },
                   ].map(s => (
-                    <div key={s.label} style={{ background: s.hot ? `rgba(196,147,10,0.08)` : "white", borderRadius:"16px", padding:"20px 24px", border: s.hot ? `1px solid rgba(196,147,10,0.25)` : "1px solid rgba(13,27,42,0.07)" }}>
+                    <div key={s.label} onClick={() => setTab(s.tab as any)}
+                      style={{ background: s.hot ? `rgba(196,147,10,0.08)` : "white", borderRadius:"16px", padding:"20px 24px", border: s.hot ? `1px solid rgba(196,147,10,0.25)` : "1px solid rgba(13,27,42,0.07)", cursor:"pointer", transition:"all 0.2s", transform:"translateY(0)" }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-3px)")}
+                      onMouseLeave={e => (e.currentTarget.style.transform = "translateY(0)")}>
                       <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"11px", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.1em", margin:"0 0 8px" }}>{s.label}</p>
                       <p style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"36px", color: s.hot ? gold : ink, margin:"0 0 4px", fontWeight:400 }}>{s.value}</p>
                       <p style={{ color:"rgba(13,27,42,0.35)", fontSize:"12px", margin:0 }}>{s.sub}</p>
@@ -231,17 +241,41 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div style={{ marginBottom:"20px" }}>
-                  <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>Hero Image URL</label>
-                  <input placeholder="https://images.unsplash.com/... or /products/name.jpg" value={newProduct.heroImage} onChange={e => setNewProduct(p => ({ ...p, heroImage:e.target.value }))} style={inputStyle} />
+                  <MediaUpload
+                    label="Hero Image"
+                    accept="image/jpeg,image/png,image/webp"
+                    folder="products"
+                    currentUrl={newProduct.heroImage}
+                    onUpload={url => setNewProduct(p => ({ ...p, heroImage: url }))}
+                    type="image"
+                  />
                 </div>
                 <div style={{ display:"flex", gap:"10px" }}>
-                  <button onClick={() => {
+                  <button onClick={async () => {
                     if (!newProduct.name) return;
-                    const prod: any = { id: newProduct.name.toLowerCase().replace(/\s+/g,"-"), name: newProduct.name, category: newProduct.category, emoji: newProduct.emoji, tagline: newProduct.tagline, description: newProduct.description, heroColor:"#C4930A", certifications:[], varieties:[] };
-                    setProds(ps => [...ps, prod]);
-                    setAddingProduct(false);
-                    setNewProduct({ name:"", category:"spices", emoji:"🌿", tagline:"", description:"", heroImage:"" });
-                    showToast("✅ Product added! Update lib/data.ts to make it permanent.");
+                    const res = await fetch("/api/products", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        name: newProduct.name,
+                        category: newProduct.category,
+                        emoji: newProduct.emoji,
+                        tagline: newProduct.tagline,
+                        description: newProduct.description,
+                        hero_image: newProduct.heroImage || null,
+                        hero_color: "#C4930A",
+                        active: 1,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      await fetchAll();
+                      setAddingProduct(false);
+                      setNewProduct({ name:"", category:"spices", emoji:"🌿", tagline:"", description:"", heroImage:"" });
+                      showToast("✅ Product saved to database!");
+                    } else {
+                      showToast("❌ Error: " + (data.error || "Unknown error"));
+                    }
                   }} style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"10px 20px", borderRadius:"10px", border:"none", cursor:"pointer", fontSize:"13px" }}>
                     <Save size={14}/> Save Product
                   </button>
@@ -250,6 +284,117 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* DB Products */}
+            {dbProducts.length > 0 && (
+              <div style={{ marginBottom:"16px" }}>
+                <p style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.4)", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"12px" }}>📦 Added via Admin ({dbProducts.length})</p>
+                <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                  {dbProducts.map(product => (
+                    <div key={product.id} style={{ background:"white", borderRadius:"20px", border:`1px solid rgba(196,147,10,0.25)`, overflow:"hidden" }}>
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
+                          {product.hero_image && <img src={product.hero_image} alt="" style={{ width:"48px", height:"48px", borderRadius:"10px", objectFit:"cover" }} onError={e => (e.currentTarget.style.display="none")} />}
+                          <span style={{ fontSize:"28px" }}>{product.emoji}</span>
+                          <div>
+                            <p style={{ fontWeight:700, color:"#0D1B2A", fontSize:"15px", margin:"0 0 4px" }}>{product.name}</p>
+                            <div style={{ display:"flex", gap:"8px" }}>
+                              <span style={{ fontSize:"10px", color:"rgba(13,27,42,0.45)", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.08)", borderRadius:"6px", padding:"2px 8px", textTransform:"capitalize" }}>{product.category}</span>
+                              <span style={{ fontSize:"10px", color:"rgba(13,27,42,0.45)" }}>{(product.varieties||[]).length} varieties</span>
+                              <span style={{ fontSize:"10px", color:"#C4930A", background:"rgba(196,147,10,0.1)", borderRadius:"6px", padding:"2px 8px", fontWeight:600 }}>DB</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:"8px" }}>
+                          <button onClick={() => {
+                            const p = product;
+                            setEditingProduct({ id:p.id, name:p.name, emoji:p.emoji||"🌿", category:p.category||"spices", tagline:p.tagline||"", description:p.description||"", hero_color:p.hero_color||"#C4930A" });
+                          }} style={{ padding:"8px 14px", borderRadius:"10px", border:"1px solid rgba(196,147,10,0.3)", background:"rgba(196,147,10,0.08)", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#C4930A" }}>Edit</button>
+                          <button onClick={async () => {
+                            if (!confirm("Delete this product?")) return;
+                            await fetch("/api/products", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
+                            setDbProducts(ps => ps.filter(p => p.id !== product.id));
+                            showToast("🗑️ Product deleted");
+                          }} style={{ padding:"8px 14px", borderRadius:"10px", border:"1px solid #fecaca", background:"#fef2f2", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Delete</button>
+                        </div>
+                      </div>
+                      {(product.varieties||[]).length > 0 && (
+                        <div style={{ borderTop:"1px solid rgba(13,27,42,0.05)", padding:"12px 20px" }}>
+                          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px" }}>
+                            {(product.varieties||[]).map((v: any) => (
+                              <div key={v.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#F5F0E8", borderRadius:"10px", padding:"10px 14px" }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                                  {v.image && <img src={v.image} alt="" style={{ width:"36px", height:"36px", borderRadius:"8px", objectFit:"cover" }} />}
+                                  <div>
+                                    <p style={{ fontWeight:600, color:"#0D1B2A", fontSize:"13px", margin:"0 0 2px" }}>{v.name}</p>
+                                    <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"11px", margin:0 }}>{v.origin} · MOQ: {v.min_order}</p>
+                                  </div>
+                                </div>
+                                <div style={{ display:"flex", gap:"6px" }}>
+                                  <button onClick={() => setEditingVariety({ ...v, product_id: product.id })} style={{ padding:"4px 10px", borderRadius:"6px", border:"1px solid rgba(196,147,10,0.3)", background:"rgba(196,147,10,0.08)", cursor:"pointer", fontSize:"11px", color:"#C4930A", fontWeight:600 }}>Edit</button>
+                                  <button onClick={async () => {
+                                    if (!confirm("Delete variety?")) return;
+                                    await fetch("/api/varieties", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: v.id, product_id: product.id }) });
+                                    setDbProducts(ps => ps.map(p => p.id === product.id ? { ...p, varieties: p.varieties.filter((x: any) => x.id !== v.id) } : p));
+                                    showToast("🗑️ Variety deleted");
+                                  }} style={{ padding:"4px 10px", borderRadius:"6px", border:"1px solid #fecaca", background:"#fef2f2", cursor:"pointer", fontSize:"11px", color:"#ef4444" }}>Delete</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ borderTop:"1px solid rgba(13,27,42,0.05)", padding:"12px 20px" }}>
+                        <button onClick={() => setAddingVariety(`db_${product.id}`)} style={{ background:"none", border:"none", cursor:"pointer", color:"#C4930A", fontSize:"12px", fontWeight:600, display:"flex", alignItems:"center", gap:"4px" }}>
+                          <Plus size={12}/> Add Variety
+                        </button>
+                        {addingVariety === `db_${product.id}` && (
+                          <div style={{ marginTop:"16px", background:"rgba(196,147,10,0.05)", border:"1px solid rgba(196,147,10,0.2)", borderRadius:"16px", padding:"20px" }}>
+                            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"12px", marginBottom:"12px" }}>
+                              {[
+                                { label:"Variety Name *", key:"name", placeholder:"e.g. Premium Grade" },
+                                { label:"Origin", key:"origin", placeholder:"e.g. Bihar" },
+                                { label:"Min. Order", key:"min_order", placeholder:"e.g. 10 kg" },
+                              ].map(f => (
+                                <div key={f.key}>
+                                  <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>{f.label}</label>
+                                  <input placeholder={f.placeholder} onChange={e => setNewVariety((v: any) => ({ ...v, [f.key]: e.target.value }))} style={inputStyle} />
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"12px" }}>
+                              <MediaUpload label="Product Image" accept="image/jpeg,image/png,image/webp" folder="products" onUpload={url => setNewVariety((v: any) => ({ ...v, image: url }))} type="image" />
+                              <MediaUpload label="Product Video" accept="video/mp4,video/mov" folder="videos" onUpload={url => setNewVariety((v: any) => ({ ...v, video: url }))} type="video" />
+                            </div>
+                            <div style={{ display:"flex", gap:"8px" }}>
+                              <button onClick={async () => {
+                                if (!newVariety.name) return;
+                                const variety = { product_id: product.id, name: newVariety.name, image_url: newVariety.image||null, video_url: newVariety.video||null };
+                                const res = await fetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(variety) });
+                                const data = await res.json();
+                                if (data.success) {
+                                  await fetchAll();
+                                  showToast("✅ Variety saved!");
+                                } else {
+                                  showToast("❌ Error: " + (data.error || "Unknown"));
+                                }
+                                setAddingVariety(null);
+                                setNewVariety({});
+                              }} style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:"linear-gradient(135deg,#C4930A,#E8A020)", color:"white", fontWeight:700, padding:"10px 18px", borderRadius:"10px", border:"none", cursor:"pointer", fontSize:"13px" }}>
+                                <Save size={14}/> Save
+                              </button>
+                              <button onClick={() => { setAddingVariety(null); setNewVariety({}); }} style={{ padding:"10px 14px", background:"none", border:"none", cursor:"pointer", color:"rgba(13,27,42,0.5)", fontSize:"13px" }}>Cancel</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Static products from lib/data.ts */}
+            <p style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.4)", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"12px" }}>📚 Default Catalogue ({prods.length})</p>
             <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
               {prods.map(product => (
                 <div key={product.id} style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", overflow:"hidden", opacity: hidden.includes(product.id) ? 0.5 : 1 }}>
@@ -284,8 +429,8 @@ export default function AdminPage() {
                             <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"11px", margin:0 }}>{v.origin} · MOQ: {v.minOrder}</p>
                           </div>
                           <div style={{ display:"flex", gap:"4px" }}>
-                            <button style={{ padding:"6px", borderRadius:"8px", border:"none", background:"none", cursor:"pointer", color:"rgba(13,27,42,0.35)" }}><Edit size={13}/></button>
-                            <button style={{ padding:"6px", borderRadius:"8px", border:"none", background:"none", cursor:"pointer", color:"#ef4444" }}><Trash2 size={13}/></button>
+                            <button onClick={() => setEditingVariety({ ...v, product_id: product.id })} style={{ padding:"6px", borderRadius:"8px", border:"none", background:"none", cursor:"pointer", color:"#C4930A" }}><Edit size={13}/></button>
+                            <button onClick={async () => { if (!confirm("Delete variety?")) return; await fetch("/api/varieties", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: v.id, product_id: product.id }) }); await fetchAll(); showToast("🗑️ Deleted"); }} style={{ padding:"6px", borderRadius:"8px", border:"none", background:"none", cursor:"pointer", color:"#ef4444" }}><Trash2 size={13}/></button>
                           </div>
                         </div>
                       ))}
@@ -311,28 +456,34 @@ export default function AdminPage() {
                             </div>
                           ))}
                         </div>
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"16px" }}>
-                          <div>
-                            <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>Image URL</label>
-                            <input placeholder="https://... or /products/name.jpg" onChange={e => setNewVariety((v: any) => ({ ...v, image: e.target.value }))} style={inputStyle} />
-                          </div>
-                          <div>
-                            <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>Video URL (optional)</label>
-                            <input placeholder="https://youtube.com/..." onChange={e => setNewVariety((v: any) => ({ ...v, video: e.target.value }))} style={inputStyle} />
-                          </div>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"16px", marginBottom:"16px" }}>
+                          <MediaUpload
+                            label="Product Image"
+                            accept="image/jpeg,image/png,image/webp"
+                            folder="products"
+                            onUpload={url => setNewVariety((v: any) => ({ ...v, image: url }))}
+                            type="image"
+                          />
+                          <MediaUpload
+                            label="Product Video (optional)"
+                            accept="video/mp4,video/mov,video/avi"
+                            folder="videos"
+                            onUpload={url => setNewVariety((v: any) => ({ ...v, video: url }))}
+                            type="video"
+                          />
                           <div style={{ gridColumn:"1/-1" }}>
                             <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>Description</label>
                             <textarea placeholder="Describe this variety..." rows={2} onChange={e => setNewVariety((v: any) => ({ ...v, description: e.target.value }))} style={{ ...inputStyle, resize:"none" }} />
                           </div>
                         </div>
                         <div style={{ display:"flex", gap:"10px" }}>
-                          <button onClick={() => {
+                          <button onClick={async () => {
                             if (!newVariety.name) return;
-                            const variety: any = { id: newVariety.name.toLowerCase().replace(/\s+/g,"-"), ...newVariety };
-                            setProds(ps => ps.map(p => p.id === product.id ? { ...p, varieties: [...p.varieties, variety] } : p));
-                            setAddingVariety(null);
-                            setNewVariety({});
-                            showToast("✅ Variety added!");
+                            const res = await fetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ product_id: product.id, name: newVariety.name, origin: newVariety.origin||null, grade: newVariety.grade||null, min_order: newVariety.minOrder||null, moisture: newVariety.moisture||null, packing: newVariety.packing||null, image: newVariety.image||null, video: newVariety.video||null, description: newVariety.description||null }) });
+                            const data = await res.json();
+                            if (data.success) { await fetchAll(); showToast("✅ Variety saved!"); }
+                            else showToast("❌ " + (data.error||"Error"));
+                            setAddingVariety(null); setNewVariety({});
                           }} style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"11px 22px", borderRadius:"10px", border:"none", cursor:"pointer", fontSize:"13px" }}>
                             <Save size={14}/> Save Variety
                           </button>
@@ -343,6 +494,223 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+
+        {/* HERO SECTION */}
+        {tab === "hero" && (
+          <div style={{ padding:"40px 48px" }}>
+            <div style={{ marginBottom:"32px" }}>
+              <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"32px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Hero Section</h1>
+              <p style={{ color:"rgba(13,27,42,0.45)", margin:0, fontSize:"14px" }}>Manage the homepage hero background video and image</p>
+            </div>
+
+            {/* Hero Video */}
+            <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px", marginBottom:"20px" }}>
+              <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Background Video</h3>
+              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>This video plays as the homepage hero background. Upload a landscape MP4 video (recommended: 1920×1080, under 20MB).</p>
+
+              {/* Current video preview */}
+              <div style={{ background:"#0D1B2A", borderRadius:"16px", overflow:"hidden", marginBottom:"20px", maxWidth:"600px" }}>
+                <video autoPlay muted loop playsInline style={{ width:"100%", maxHeight:"280px", objectFit:"cover", display:"block" }}>
+                  <source src="/hero.mp4" type="video/mp4" />
+                </video>
+                <div style={{ padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,0.08)" }}>
+                  <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"12px", margin:0 }}>Current: /hero.mp4 — Replace by uploading below</p>
+                </div>
+              </div>
+
+              <MediaUpload
+                label="Upload Hero Video"
+                accept="video/mp4,video/mov,video/avi"
+                folder="hero"
+                onUpload={async (url) => {
+                  showToast("✅ Video uploaded! Update /public/hero.mp4 with this file: " + url);
+                }}
+                type="video"
+              />
+              <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"12px", marginTop:"10px" }}>
+                💡 After uploading, copy the URL and save the file as <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>hero.mp4</code> in the <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>/public</code> folder of your project.
+              </p>
+            </div>
+
+            {/* Hero slides info */}
+            <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px", marginBottom:"20px" }}>
+              <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Hero Slides</h3>
+              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>The hero rotates through product slides automatically. These are defined in <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>lib/data.ts</code>.</p>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"12px" }}>
+                {[
+                  { emoji:"🌿", label:"Turmeric", color:"#C4930A" },
+                  { emoji:"🌶️", label:"Red Chilli", color:"#C0392B" },
+                  { emoji:"⚫", label:"Black Pepper", color:"#2C2C2C" },
+                  { emoji:"🌾", label:"Cumin", color:"#8B6914" },
+                  { emoji:"☕", label:"Coffee", color:"#3E1C00" },
+                  { emoji:"🍚", label:"Rice", color:"#C4930A" },
+                ].map(s => (
+                  <div key={s.label} style={{ background:"#0D1B2A", borderRadius:"14px", padding:"20px", display:"flex", alignItems:"center", gap:"12px" }}>
+                    <span style={{ fontSize:"28px" }}>{s.emoji}</span>
+                    <div>
+                      <p style={{ color:"white", fontWeight:600, fontSize:"14px", margin:"0 0 2px" }}>{s.label}</p>
+                      <div style={{ width:"40px", height:"4px", borderRadius:"2px", background:s.color }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick links */}
+            <div style={{ background:"rgba(196,147,10,0.06)", borderRadius:"16px", border:"1px solid rgba(196,147,10,0.2)", padding:"20px 24px" }}>
+              <p style={{ fontWeight:700, color:ink, fontSize:"14px", margin:"0 0 8px" }}>📌 To update hero content:</p>
+              <ol style={{ color:"rgba(13,27,42,0.6)", fontSize:"13px", margin:0, paddingLeft:"20px", lineHeight:2 }}>
+                <li>Upload your video above → copy the URL</li>
+                <li>Download the file and save as <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>hero.mp4</code> in <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>~/Downloads/shumitra-source-code/public/</code></li>
+                <li>Restart the dev server to see changes</li>
+              </ol>
+            </div>
+          </div>
+        )}
+
+        {/* EDIT PRODUCT MODAL */}
+        {editingProduct && (
+          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }}>
+            <div style={{ background:"white", borderRadius:"24px", padding:"32px", width:"580px", maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto" as const }}>
+              <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"24px", color:"#0D1B2A", margin:"0 0 24px", fontWeight:400 }}>Edit Product</h2>
+              <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"80px 1fr", gap:"12px" }}>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Emoji</label>
+                    <input value={editingProduct.emoji||""} onChange={e => setEditingProduct((p: any) => ({ ...p, emoji: e.target.value }))}
+                      style={{ width:"100%", padding:"10px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"22px", textAlign:"center", outline:"none", boxSizing:"border-box" as const }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Name</label>
+                    <input value={editingProduct.name||""} onChange={e => setEditingProduct((p: any) => ({ ...p, name: e.target.value }))}
+                      style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Category</label>
+                  <select value={editingProduct.category||"spices"} onChange={e => setEditingProduct((p: any) => ({ ...p, category: e.target.value }))}
+                    style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const }}>
+                    <option value="spices">Spices</option>
+                    <option value="commodities">Commodities</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Tagline</label>
+                  <input value={editingProduct.tagline||""} onChange={e => setEditingProduct((p: any) => ({ ...p, tagline: e.target.value }))}
+                    style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const }} />
+                </div>
+                <div>
+                  <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Description</label>
+                  <textarea value={editingProduct.description||""} onChange={e => setEditingProduct((p: any) => ({ ...p, description: e.target.value }))} rows={3}
+                    style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const, resize:"none" as const }} />
+                </div>
+                <MediaUpload
+                  label="Product Image"
+                  accept="image/jpeg,image/png,image/webp"
+                  folder="products"
+                  currentUrl={editingProduct.hero_image||""}
+                  onUpload={url => setEditingProduct((p: any) => ({ ...p, hero_image: url }))}
+                  type="image"
+                />
+              </div>
+              <div style={{ display:"flex", gap:"10px", marginTop:"24px" }}>
+                <button onClick={async () => {
+                  const { id, ...updates } = editingProduct;
+                  const res = await fetch("/api/products", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id, ...updates }) });
+                  const data = await res.json();
+                  if (data.success) { await fetchAll(); setEditingProduct(null); showToast("✅ Product updated!"); }
+                  else showToast("❌ " + (data.error||"Error"));
+                }} style={{ flex:1, padding:"12px", background:"linear-gradient(135deg,#C4930A,#E8A020)", color:"white", fontWeight:700, border:"none", borderRadius:"12px", cursor:"pointer", fontSize:"14px" }}>Save Changes</button>
+                <button onClick={() => setEditingProduct(null)} style={{ padding:"12px 20px", background:"none", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"12px", cursor:"pointer", fontSize:"14px", color:"rgba(13,27,42,0.5)" }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* EDIT VARIETY MODAL */}
+        {editingVariety && (
+          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }}>
+            <div style={{ background:"white", borderRadius:"24px", padding:"32px", width:"580px", maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto" as const }}>
+              <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"24px", color:"#0D1B2A", margin:"0 0 24px", fontWeight:400 }}>Edit Variety</h2>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"14px" }}>
+                {[
+                  { label:"Name", key:"name" },
+                  { label:"Origin", key:"origin" },
+                  { label:"Min. Order", key:"min_order" },
+                  { label:"Grade", key:"grade" },
+                  { label:"Moisture %", key:"moisture" },
+                  { label:"Packing", key:"packing" },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>{f.label}</label>
+                    <input value={editingVariety[f.key]||""} onChange={e => setEditingVariety((v: any) => ({ ...v, [f.key]: e.target.value }))}
+                      style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const }} />
+                  </div>
+                ))}
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Description</label>
+                  <textarea value={editingVariety.description||""} onChange={e => setEditingVariety((v: any) => ({ ...v, description: e.target.value }))} rows={2}
+                    style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const, resize:"none" as const }} />
+                </div>
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"8px", textTransform:"uppercase" }}>Product Images</label>
+                  {/* Show existing images */}
+                  {(() => {
+                    const imgs = [
+                      ...(editingVariety.image ? [editingVariety.image] : []),
+                      ...(editingVariety.images ? (typeof editingVariety.images === "string" ? JSON.parse(editingVariety.images||"[]") : editingVariety.images) : [])
+                    ].filter(Boolean);
+                    return imgs.length > 0 ? (
+                      <div style={{ display:"flex", gap:"8px", flexWrap:"wrap", marginBottom:"10px" }}>
+                        {imgs.map((img: string, i: number) => (
+                          <div key={i} style={{ position:"relative" }}>
+                            <img src={img} alt="" style={{ width:"72px", height:"72px", objectFit:"cover", borderRadius:"8px", border:"1px solid rgba(13,27,42,0.1)" }} />
+                            <button onClick={() => {
+                              const allImgs = imgs.filter((_: string, idx: number) => idx !== i);
+                              setEditingVariety((v: any) => ({ ...v, image: allImgs[0]||null, images: allImgs.slice(1) }));
+                            }} style={{ position:"absolute", top:"-6px", right:"-6px", background:"#ef4444", color:"white", border:"none", borderRadius:"50%", width:"18px", height:"18px", cursor:"pointer", fontSize:"11px", display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 }}>×</button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null;
+                  })()}
+                  <MediaUpload
+                    label="Add Image"
+                    accept="image/jpeg,image/png,image/webp"
+                    folder="products"
+                    onUpload={url => setEditingVariety((v: any) => {
+                      if (!v.image) return { ...v, image: url };
+                      const existing = v.images ? (typeof v.images === "string" ? JSON.parse(v.images||"[]") : v.images) : [];
+                      return { ...v, images: [...existing, url] };
+                    })}
+                    type="image"
+                  />
+                </div>
+                <div style={{ gridColumn:"1/-1" }}>
+                  <MediaUpload
+                    label="Variety Video (optional)"
+                    accept="video/mp4,video/mov,video/avi"
+                    folder="videos"
+                    currentUrl={editingVariety.video||""}
+                    onUpload={url => setEditingVariety((v: any) => ({ ...v, video: url }))}
+                    type="video"
+                  />
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:"10px", marginTop:"24px" }}>
+                <button onClick={async () => {
+                  const { product_id, ...updates } = editingVariety;
+                  const res = await fetch("/api/varieties", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ ...updates, product_id }) });
+                  const data = await res.json();
+                  if (data.success) { await fetchAll(); setEditingVariety(null); showToast("✅ Variety updated!"); }
+                  else showToast("❌ " + (data.error||"Error"));
+                }} style={{ flex:1, padding:"12px", background:"linear-gradient(135deg,#C4930A,#E8A020)", color:"white", fontWeight:700, border:"none", borderRadius:"12px", cursor:"pointer", fontSize:"14px" }}>Save Changes</button>
+                <button onClick={() => setEditingVariety(null)} style={{ padding:"12px 20px", background:"none", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"12px", cursor:"pointer", fontSize:"14px", color:"rgba(13,27,42,0.5)" }}>Cancel</button>
+              </div>
             </div>
           </div>
         )}

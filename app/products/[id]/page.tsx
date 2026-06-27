@@ -1,167 +1,227 @@
 "use client";
-import React, { useState } from "react";
-import { notFound } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Play } from "lucide-react";
-import { products } from "@/lib/data";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { products as staticProducts } from "@/lib/data";
+import QuoteModal from "@/components/QuoteModal";
+
+const ink = "#0D1B2A";
+const gold = "#C4930A";
+const goldLight = "#E8A020";
+const cream = "#F5F0E8";
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
-  const product = products.find(p => p.id === id);
-  if (!product) notFound();
-
+  const [product, setProduct] = useState<any>(null);
+  const [notFound, setNotFound] = useState(false);
   const [activeVariety, setActiveVariety] = useState(0);
-  const variety = product.varieties[activeVariety];
+  const [activeImg, setActiveImg] = useState<number>(0);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+
+  useEffect(() => {
+    const staticP = staticProducts.find(p => p.id === id);
+    if (staticP) { setProduct(staticP); return; }
+    fetch("/api/products")
+      .then(r => r.json())
+      .then(d => {
+        const dbP = (d.data || []).find((p: any) => p.id === id);
+        if (dbP) {
+          setProduct({
+            id: dbP.id, name: dbP.name, emoji: dbP.emoji || "🌿",
+            category: dbP.category, tagline: dbP.tagline || "",
+            description: dbP.description || "", heroColor: dbP.hero_color || gold,
+            hero_image: dbP.hero_image || "", certifications: [],
+            varieties: (dbP.varieties || []).map((v: any) => ({ ...v, minOrder: v.min_order })),
+          });
+        } else setNotFound(true);
+      })
+      .catch(() => setNotFound(true));
+  }, [id]);
+
+  if (notFound) return (
+    <div style={{ minHeight:"100vh", background:cream, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:"16px" }}>
+      <p style={{ fontSize:"64px" }}>🔍</p>
+      <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"32px", color:ink }}>Product Not Found</h1>
+      <Link href="/products" style={{ color:gold, textDecoration:"none", fontWeight:600 }}>← Back to Products</Link>
+    </div>
+  );
+
+  if (!product) return (
+    <div style={{ minHeight:"100vh", background:cream, display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"15px" }}>Loading product...</p>
+    </div>
+  );
+
+  const variety = product.varieties?.[activeVariety];
+  const imgs = variety ? [
+    ...(variety.image ? [variety.image] : []),
+    ...(variety.images ? (typeof variety.images === "string" ? JSON.parse(variety.images || "[]") : variety.images) : [])
+  ].filter(Boolean) : [];
+
+  const specs = variety ? [
+    { label:"Origin", value: variety.origin, icon:"📍" },
+    { label:"Grade", value: variety.grade, icon:"🏅" },
+    { label:"Min. Order", value: variety.minOrder || variety.min_order, icon:"📦" },
+    { label:"Moisture", value: variety.moisture, icon:"💧" },
+    { label:"Packing", value: variety.packing, icon:"🗃️" },
+  ].filter(s => s.value) : [];
 
   return (
-    <div style={{ minHeight:"100vh", background:"#F5F0E8", paddingTop:"80px" }}>
+    <div style={{ minHeight:"100vh", background:cream, paddingTop:"70px" }}>
 
       {/* Breadcrumb */}
-      <div style={{ maxWidth:"1200px", margin:"0 auto", padding:"20px 48px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"8px", fontSize:"13px", color:"rgba(13,27,42,0.45)" }}>
-          <Link href="/" style={{ color:"rgba(13,27,42,0.45)", textDecoration:"none" }}>Home</Link>
-          <span>/</span>
-          <Link href="/products" style={{ color:"rgba(13,27,42,0.45)", textDecoration:"none" }}>Products</Link>
-          <span>/</span>
-          <span style={{ color:"#0D1B2A", fontWeight:600 }}>{product.name}</span>
+      <div style={{ background:"white", borderBottom:"1px solid rgba(13,27,42,0.06)" }}>
+        <div style={{ maxWidth:"1200px", margin:"0 auto", padding:"14px 48px", display:"flex", alignItems:"center", gap:"8px", fontSize:"13px" }}>
+          <Link href="/" style={{ color:"rgba(13,27,42,0.4)", textDecoration:"none" }}>Home</Link>
+          <span style={{ color:"rgba(13,27,42,0.25)" }}>/</span>
+          <Link href="/products" style={{ color:"rgba(13,27,42,0.4)", textDecoration:"none" }}>Products</Link>
+          <span style={{ color:"rgba(13,27,42,0.25)" }}>/</span>
+          <span style={{ color:ink, fontWeight:600 }}>{product.name}</span>
         </div>
       </div>
 
-      {/* Hero */}
-      <div style={{ maxWidth:"1200px", margin:"0 auto", padding:"0 48px 48px" }}>
-        <div style={{ background:"#0D1B2A", borderRadius:"24px", overflow:"hidden", padding:"48px", position:"relative" }}>
-          <div style={{ position:"absolute", inset:0, background:`radial-gradient(circle at 70% 50%, ${product.heroColor}30, transparent 60%)`, pointerEvents:"none" }} />
-          <div style={{ position:"relative", zIndex:1, display:"grid", gridTemplateColumns:"1fr 1fr", gap:"48px", alignItems:"center" }}>
-            <div>
-              <span style={{ display:"inline-block", fontSize:"11px", fontWeight:700, letterSpacing:"0.18em", textTransform:"uppercase", color:"#C4930A", background:"rgba(196,147,10,0.12)", border:"1px solid rgba(196,147,10,0.25)", borderRadius:"50px", padding:"5px 16px", marginBottom:"20px" }}>
+      <div style={{ maxWidth:"1200px", margin:"0 auto", padding:"32px 48px 80px" }}>
+
+        {/* Product Header */}
+        <div style={{ background:"white", borderRadius:"24px", padding:"40px", border:"1px solid rgba(13,27,42,0.07)", marginBottom:"24px", display:"grid", gridTemplateColumns:"1fr auto", gap:"40px", alignItems:"center" }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"16px", flexWrap:"wrap" as const }}>
+              <span style={{ fontSize:"11px", fontWeight:700, letterSpacing:"0.18em", textTransform:"uppercase", color:gold, background:"rgba(196,147,10,0.1)", border:"1px solid rgba(196,147,10,0.2)", borderRadius:"50px", padding:"4px 14px" }}>
                 {product.category}
               </span>
-              <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"clamp(36px,4vw,56px)", color:"white", margin:"0 0 16px", lineHeight:1.1, fontWeight:400 }}>{product.name}</h1>
-              <p style={{ color:"rgba(255,255,255,0.65)", fontSize:"16px", lineHeight:1.8, marginBottom:"24px" }}>{product.description}</p>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", marginBottom:"32px" }}>
-                {product.certifications.map(c => (
-                  <span key={c} style={{ fontSize:"11px", fontWeight:700, color:"#C4930A", border:"1px solid rgba(196,147,10,0.35)", borderRadius:"10px", padding:"4px 12px" }}>{c}</span>
-                ))}
-              </div>
-              <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
-                <Link href="mailto:info@silasya.com" style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:"linear-gradient(135deg,#C4930A,#E8A020)", color:"white", fontWeight:700, padding:"14px 28px", borderRadius:"12px", textDecoration:"none", fontSize:"14px", boxShadow:"0 6px 20px rgba(196,147,10,0.4)" }}>
-                  Request Quote <ArrowRight size={15} />
-                </Link>
-                <a href="mailto:info@silasya.com" style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:"rgba(255,255,255,0.08)", color:"white", fontWeight:600, padding:"14px 28px", borderRadius:"12px", textDecoration:"none", fontSize:"14px", border:"1px solid rgba(255,255,255,0.15)" }}>
-                  💬 WhatsApp
-                </a>
-              </div>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <div style={{ width:"100%", maxWidth:"360px", aspectRatio:"16/9", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"20px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"12px", cursor:"pointer" }}>
-                <div style={{ width:"60px", height:"60px", background:"rgba(196,147,10,0.2)", border:"1px solid rgba(196,147,10,0.3)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <Play size={22} color="#C4930A" style={{ marginLeft:"3px" }} />
-                </div>
-                <span style={{ fontSize:"40px" }}>{product.emoji}</span>
-                <p style={{ color:"rgba(255,255,255,0.35)", fontSize:"12px", margin:0 }}>Product video — upload via admin</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Varieties + Detail */}
-      <div style={{ maxWidth:"1200px", margin:"0 auto", padding:"0 48px 80px" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"300px 1fr", gap:"32px" }}>
-
-          {/* Variety selector */}
-          <div>
-            <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"22px", color:"#0D1B2A", marginBottom:"20px", fontWeight:400 }}>
-              {product.varieties.length} Varieties Available
-            </h2>
-            <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-              {product.varieties.map((v, i) => (
-                <button key={v.id} onClick={() => setActiveVariety(i)} style={{ width:"100%", textAlign:"left", padding:"16px", borderRadius:"16px", border: i === activeVariety ? "1px solid #0D1B2A" : "1px solid rgba(13,27,42,0.1)", background: i === activeVariety ? "#0D1B2A" : "white", cursor:"pointer", transition:"all 0.2s" }}>
-                  <p style={{ fontWeight:600, fontSize:"14px", color: i === activeVariety ? "white" : "#0D1B2A", margin:"0 0 2px" }}>{v.name}</p>
-                  <p style={{ fontSize:"12px", color: i === activeVariety ? "rgba(255,255,255,0.5)" : "rgba(13,27,42,0.45)", margin:"0 0 8px" }}>{v.origin}</p>
-                  <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
-                    <span style={{ fontSize:"11px", padding:"2px 10px", borderRadius:"8px", background: i === activeVariety ? "rgba(255,255,255,0.1)" : "#F5F0E8", color: i === activeVariety ? "#C4930A" : "rgba(13,27,42,0.55)" }}>{v.grade}</span>
-                    <span style={{ fontSize:"11px", padding:"2px 10px", borderRadius:"8px", background: i === activeVariety ? "rgba(255,255,255,0.1)" : "#F5F0E8", color: i === activeVariety ? "rgba(255,255,255,0.6)" : "rgba(13,27,42,0.55)" }}>MOQ: {v.minOrder}</span>
-                  </div>
-                </button>
+              {product.certifications?.map((c: string) => (
+                <span key={c} style={{ fontSize:"11px", fontWeight:600, color:"rgba(13,27,42,0.5)", background:"rgba(13,27,42,0.05)", borderRadius:"50px", padding:"4px 12px" }}>{c}</span>
               ))}
             </div>
-          </div>
-
-          {/* Variety detail */}
-          <div style={{ background:"white", borderRadius:"24px", border:"1px solid rgba(13,27,42,0.08)", overflow:"hidden", boxShadow:"0 2px 20px rgba(0,0,0,0.05)" }}>
-            <div style={{ padding:"32px", borderBottom:"1px solid rgba(13,27,42,0.08)" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:"16px", marginBottom:"12px" }}>
-                <div>
-                  <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"26px", color:"#0D1B2A", margin:"0 0 4px", fontWeight:400 }}>{variety.name}</h3>
-                  <p style={{ color:"rgba(13,27,42,0.5)", fontSize:"13px", margin:0 }}>📍 {variety.origin}</p>
-                </div>
-                <span style={{ background:"rgba(196,147,10,0.1)", color:"#C4930A", fontSize:"11px", fontWeight:700, padding:"6px 14px", borderRadius:"10px", border:"1px solid rgba(196,147,10,0.2)", whiteSpace:"nowrap" }}>{variety.grade}</span>
-              </div>
-              <p style={{ color:"rgba(13,27,42,0.6)", fontSize:"14px", lineHeight:1.75, margin:0 }}>{variety.description}</p>
-            </div>
-
-            <div style={{ padding:"32px" }}>
-              <h4 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"18px", color:"#0D1B2A", marginBottom:"16px", fontWeight:400 }}>Technical Specifications</h4>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px", marginBottom:"28px" }}>
-                {variety.specs.map(spec => (
-                  <div key={spec.label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 16px", background:"#F5F0E8", borderRadius:"12px" }}>
-                    <span style={{ color:"rgba(13,27,42,0.55)", fontSize:"13px" }}>{spec.label}</span>
-                    <span style={{ fontFamily:"monospace", color:"#0D1B2A", fontWeight:600, fontSize:"13px" }}>{spec.value}</span>
-                  </div>
-                ))}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 16px", background:"#F5F0E8", borderRadius:"12px" }}>
-                  <span style={{ color:"rgba(13,27,42,0.55)", fontSize:"13px" }}>Moisture</span>
-                  <span style={{ fontFamily:"monospace", color:"#0D1B2A", fontWeight:600, fontSize:"13px" }}>{variety.moisture}</span>
-                </div>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 16px", background:"#F5F0E8", borderRadius:"12px" }}>
-                  <span style={{ color:"rgba(13,27,42,0.55)", fontSize:"13px" }}>Colour</span>
-                  <span style={{ fontFamily:"monospace", color:"#0D1B2A", fontWeight:600, fontSize:"13px" }}>{variety.color}</span>
-                </div>
-              </div>
-
-              <h4 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"18px", color:"#0D1B2A", marginBottom:"12px", fontWeight:400 }}>Packing Options</h4>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", marginBottom:"28px" }}>
-                {variety.packing.map(p => (
-                  <span key={p} style={{ background:"rgba(13,27,42,0.05)", color:"#0D1B2A", fontSize:"13px", border:"1px solid rgba(13,27,42,0.1)", borderRadius:"10px", padding:"8px 16px" }}>📦 {p}</span>
-                ))}
-              </div>
-
-              <div style={{ background:"rgba(196,147,10,0.06)", border:"1px solid rgba(196,147,10,0.2)", borderRadius:"16px", padding:"20px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"16px", flexWrap:"wrap" }}>
-                <div>
-                  <p style={{ color:"rgba(13,27,42,0.5)", fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.12em", fontWeight:600, margin:"0 0 4px" }}>Minimum Order Quantity</p>
-                  <p style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"26px", color:"#0D1B2A", margin:0, fontWeight:400 }}>{variety.minOrder}</p>
-                </div>
-                <div style={{ display:"flex", gap:"10px" }}>
-                  <Link href="mailto:info@silasya.com" style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:"linear-gradient(135deg,#C4930A,#E8A020)", color:"white", fontWeight:700, padding:"12px 24px", borderRadius:"10px", textDecoration:"none", fontSize:"14px" }}>
-                    Get Quote <ArrowRight size={14} />
-                  </Link>
-                  <a href="mailto:info@silasya.com" style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:"#0D1B2A", color:"white", fontWeight:600, padding:"12px 24px", borderRadius:"10px", textDecoration:"none", fontSize:"14px" }}>
-                    💬 WhatsApp
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Related products */}
-      <div style={{ background:"#0D1B2A", padding:"64px 48px" }}>
-        <div style={{ maxWidth:"1200px", margin:"0 auto" }}>
-          <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"26px", color:"white", marginBottom:"28px", fontWeight:400 }}>Other Products</h3>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"16px" }}>
-            {products.filter(p => p.id !== product.id).slice(0,4).map(p => (
-              <Link key={p.id} href={`/products/${p.id}`} style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"16px", padding:"20px", textDecoration:"none", display:"block" }}>
-                <span style={{ fontSize:"32px", display:"block", marginBottom:"12px" }}>{p.emoji}</span>
-                <p style={{ color:"white", fontWeight:600, fontSize:"14px", margin:"0 0 4px" }}>{p.name}</p>
-                <p style={{ color:"rgba(255,255,255,0.35)", fontSize:"12px", margin:0 }}>{p.varieties.length} varieties</p>
+            <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"clamp(30px,4vw,50px)", color:ink, margin:"0 0 12px", lineHeight:1.1, fontWeight:400 }}>
+              {product.emoji} {product.name}
+            </h1>
+            <p style={{ color:"rgba(13,27,42,0.55)", fontSize:"16px", lineHeight:1.8, margin:"0 0 28px", maxWidth:"520px" }}>
+              {product.description || product.tagline}
+            </p>
+            <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" as const }}>
+              <button onClick={() => setQuoteOpen(true)}
+                style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"13px 26px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"14px", boxShadow:"0 6px 20px rgba(196,147,10,0.3)" }}>
+                Get Quote <ArrowRight size={15} />
+              </button>
+              <Link href="/products"
+                style={{ display:"inline-flex", alignItems:"center", gap:"8px", color:ink, fontWeight:600, padding:"13px 22px", borderRadius:"12px", textDecoration:"none", fontSize:"14px", border:"1px solid rgba(13,27,42,0.15)" }}>
+                <ArrowLeft size={15} /> All Products
               </Link>
-            ))}
+            </div>
           </div>
+          {product.hero_image ? (
+            <div style={{ width:"200px", height:"200px", borderRadius:"20px", overflow:"hidden", flexShrink:0, border:"1px solid rgba(13,27,42,0.08)" }}>
+              <img src={product.hero_image} alt={product.name} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+            </div>
+          ) : (
+            <div style={{ width:"160px", height:"160px", borderRadius:"20px", background:cream, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:"72px" }}>
+              {product.emoji}
+            </div>
+          )}
+        </div>
+
+        {/* Varieties */}
+        {product.varieties?.length > 0 && (
+          <div style={{ display:"grid", gridTemplateColumns:"240px 1fr", gap:"20px", alignItems:"start" }}>
+
+            {/* Sidebar */}
+            <div style={{ background:"white", borderRadius:"20px", padding:"18px", border:"1px solid rgba(13,27,42,0.07)", position:"sticky", top:"90px" }}>
+              <p style={{ fontSize:"10px", fontWeight:700, color:"rgba(13,27,42,0.35)", textTransform:"uppercase", letterSpacing:"0.12em", margin:"0 0 10px" }}>
+                {product.varieties.length} {product.varieties.length === 1 ? "Variety" : "Varieties"}
+              </p>
+              <div style={{ display:"flex", flexDirection:"column", gap:"3px" }}>
+                {product.varieties.map((v: any, i: number) => (
+                  <button key={v.id} onClick={() => { setActiveVariety(i); setActiveImg(0); }}
+                    style={{ textAlign:"left", padding:"10px 12px", borderRadius:"10px", border:"none", background: activeVariety === i ? "rgba(196,147,10,0.08)" : "transparent", color: activeVariety === i ? gold : "rgba(13,27,42,0.6)", fontWeight: activeVariety === i ? 700 : 500, fontSize:"13px", cursor:"pointer", transition:"all 0.15s", borderLeft: activeVariety === i ? `3px solid ${gold}` : "3px solid transparent", paddingLeft: activeVariety === i ? "12px" : "12px" }}>
+                    {v.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Detail */}
+            {variety && (
+              <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
+
+                {/* Image gallery */}
+                {imgs.length > 0 && (
+                  <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", overflow:"hidden" }}>
+                    <div style={{ background:"#fafaf8", display:"flex", alignItems:"center", justifyContent:"center", padding:"28px", minHeight:"320px" }}>
+                      <img src={imgs[activeImg] || imgs[0]} alt={variety.name}
+                        style={{ maxWidth:"100%", maxHeight:"420px", width:"auto", height:"auto", objectFit:"contain", display:"block", borderRadius:"6px" }} />
+                    </div>
+                    {imgs.length > 1 && (
+                      <div style={{ display:"flex", gap:"8px", padding:"14px 20px", borderTop:"1px solid rgba(13,27,42,0.06)", overflowX:"auto" as const }}>
+                        {imgs.map((img: string, i: number) => (
+                          <img key={i} src={img} alt="" onClick={() => setActiveImg(i)}
+                            style={{ width:"58px", height:"58px", objectFit:"cover", borderRadius:"8px", cursor:"pointer", flexShrink:0, border: activeImg === i ? `2px solid ${gold}` : "2px solid rgba(13,27,42,0.08)", opacity: activeImg === i ? 1 : 0.5, transition:"all 0.15s" }} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Specs */}
+                <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px" }}>
+                  <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"26px", color:ink, margin:"0 0 20px", fontWeight:400 }}>{variety.name}</h2>
+                  {specs.length > 0 && (
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:"10px", marginBottom:"22px" }}>
+                      {specs.map(s => (
+                        <div key={s.label} style={{ background:cream, borderRadius:"12px", padding:"13px 15px", border:"1px solid rgba(13,27,42,0.05)" }}>
+                          <p style={{ fontSize:"10px", fontWeight:700, color:"rgba(13,27,42,0.35)", textTransform:"uppercase", letterSpacing:"0.08em", margin:"0 0 4px" }}>{s.icon} {s.label}</p>
+                          <p style={{ fontSize:"14px", fontWeight:600, color:ink, margin:0, lineHeight:1.4 }}>{s.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {variety.description && (
+                    <p style={{ color:"rgba(13,27,42,0.55)", lineHeight:1.9, fontSize:"15px", marginBottom:"22px", paddingBottom:"22px", borderBottom:"1px solid rgba(13,27,42,0.06)" }}>
+                      {variety.description}
+                    </p>
+                  )}
+                  <button onClick={() => setQuoteOpen(true)}
+                    style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"13px 26px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"14px", boxShadow:"0 4px 16px rgba(196,147,10,0.25)" }}>
+                    Request Quote for {variety.name} <ArrowRight size={15} />
+                  </button>
+                </div>
+
+                {/* Video */}
+                {variety.video && (
+                  <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"24px" }}>
+                    <p style={{ fontSize:"10px", fontWeight:700, color:"rgba(13,27,42,0.35)", textTransform:"uppercase", letterSpacing:"0.12em", margin:"0 0 14px" }}>Product Video</p>
+                    <div style={{ borderRadius:"12px", overflow:"hidden", background:"#111", maxWidth:"540px" }}>
+                      <video controls style={{ width:"100%", maxHeight:"305px", display:"block" }}>
+                        <source src={variety.video} />
+                      </video>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {(!product.varieties || product.varieties.length === 0) && (
+          <div style={{ background:"white", borderRadius:"20px", padding:"56px 48px", textAlign:"center", border:"1px solid rgba(13,27,42,0.07)" }}>
+            <p style={{ fontSize:"48px", marginBottom:"16px" }}>📦</p>
+            <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"24px", color:ink, margin:"0 0 8px", fontWeight:400 }}>Variety details coming soon</h3>
+            <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"15px", marginBottom:"24px" }}>Contact us for specifications and pricing.</p>
+            <button onClick={() => setQuoteOpen(true)}
+              style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:ink, color:"white", fontWeight:600, padding:"13px 26px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"14px" }}>
+              Get in Touch <ArrowRight size={14} />
+            </button>
+          </div>
+        )}
+
+        <div style={{ marginTop:"28px" }}>
+          <Link href="/products" style={{ display:"inline-flex", alignItems:"center", gap:"6px", color:"rgba(13,27,42,0.45)", textDecoration:"none", fontWeight:600, fontSize:"13px" }}>
+            <ArrowLeft size={14} /> Back to All Products
+          </Link>
         </div>
       </div>
 
+      <QuoteModal isOpen={quoteOpen} onClose={() => setQuoteOpen(false)} preselectedProduct={product.name} />
     </div>
   );
 }

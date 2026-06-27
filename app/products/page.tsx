@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
-import { products } from "@/lib/data";
+import { products as staticProducts } from "@/lib/data";
 import QuoteModal from "@/components/QuoteModal";
 
 const productPhotos: Record<string, { img: string; spec: string; origin: string; color: string }> = {
@@ -27,6 +27,23 @@ export default function ProductsPage() {
   const [cat, setCat] = useState<"all"|"spices"|"commodities">("all");
   const [hoveredId, setHoveredId] = useState<string|null>(null);
   const [quoteModal, setQuoteModal] = useState<{open:boolean;productId:string}>({open:false, productId:""});
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then(r => r.json())
+      .then(d => { if (d.data) setDbProducts(d.data); })
+      .catch(() => {});
+  }, []);
+
+  const products = useMemo(() => [...staticProducts, ...dbProducts.map((p: any) => ({
+      id: p.id, name: p.name, emoji: p.emoji || "🌿",
+      category: p.category as "spices"|"commodities",
+      tagline: p.tagline || "", description: p.description || "",
+      heroColor: p.hero_color || "#C4930A", certifications: [],
+      varieties: (p.varieties||[]).map((v:any) => ({ id:v.id, name:v.name, origin:v.origin||"", grade:v.grade||"", minOrder:v.min_order||"", description:v.description||"" })),
+  }))], [dbProducts]);
+
 
   const filtered = products.filter(p => {
     const matchCat = cat === "all" || p.category === cat;
@@ -94,7 +111,8 @@ export default function ProductsPage() {
         ) : (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"20px" }}>
             {filtered.map(product => {
-              const photo = productPhotos[product.id];
+              const dbP = dbProducts.find((p:any) => p.id === product.id);
+                  const photo = productPhotos[product.id] || { img: dbP?.hero_image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80", spec: product.tagline || "", origin: product.description || "", color: product.heroColor || "#C4930A" };
               const isHovered = hoveredId === product.id;
               return (
                 <div key={product.id}
@@ -198,7 +216,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <QuoteModal isOpen={quoteModal.open} onClose={() => setQuoteModal({open:false, productId:""})} preselectedProduct={quoteModal.productId} />
+      <QuoteModal isOpen={quoteModal.open} onClose={() => setQuoteModal({open:false, productId:""})} preselectedProduct={products.find(p => p.id === quoteModal.productId)?.name || quoteModal.productId} />
     </div>
   );
 }
