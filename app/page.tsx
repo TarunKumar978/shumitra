@@ -280,6 +280,12 @@ export default function Home() {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteProduct, setQuoteProduct] = useState("");
   const [quoteModal, setQuoteModal] = useState<{open:boolean;productId:string}>({open:false,productId:""});
+  const [heroImage, setHeroImage] = useState("");
+  useEffect(() => {
+    fetch("/api/settings").then(r => r.json()).then(d => {
+      if (d.data?.hero_image) setHeroImage(d.data.hero_image);
+    }).catch(() => {});
+  }, []);
 
   const goToSlide = (i: number) => { setSlide(i); setAnimKey(k => k + 1); };
 
@@ -295,10 +301,17 @@ export default function Home() {
       {/* HERO */}
       <section style={{ position:"relative", height:"100vh", minHeight:"640px", overflow:"hidden" }}>
         <video autoPlay muted loop playsInline
+          poster={heroImage || undefined}
           onError={e => { (e.currentTarget as HTMLVideoElement).style.display="none"; }}
           style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:0 }}>
           <source src="/hero.mp4" type="video/mp4" />
         </video>
+        {!heroImage && (
+          <div style={{ position:"absolute", inset:0, background:"#0D1B2A", zIndex:-1 }} />
+        )}
+        {heroImage && (
+          <img src={heroImage} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", zIndex:-1 }} />
+        )}
         <div style={{ position:"absolute", inset:0, zIndex:0, background:cur.bg, transition:"background 1.5s ease" }} />
         <div style={{ position:"absolute", inset:0, zIndex:1, opacity:0.06, backgroundImage:"linear-gradient(rgba(255,255,255,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.8) 1px,transparent 1px)", backgroundSize:"80px 80px" }} />
         <div key={`emoji-${animKey}`} style={{ position:"absolute", right:"8%", top:"50%", transform:"translateY(-50%)", fontSize:"clamp(180px,22vw,320px)", lineHeight:1, zIndex:2, opacity:0.18, filter:"blur(2px)", animation:"floatBig 6s ease-in-out infinite", userSelect:"none", pointerEvents:"none" }}>{cur.emoji}</div>

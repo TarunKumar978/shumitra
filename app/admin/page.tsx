@@ -504,43 +504,76 @@ export default function AdminPage() {
           <div style={{ padding:"40px 48px" }}>
             <div style={{ marginBottom:"32px" }}>
               <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"32px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Hero Section</h1>
-              <p style={{ color:"rgba(13,27,42,0.45)", margin:0, fontSize:"14px" }}>Manage the homepage hero background video and image</p>
+              <p style={{ color:"rgba(13,27,42,0.45)", margin:0, fontSize:"14px" }}>Upload the homepage hero background video and fallback image</p>
             </div>
 
             {/* Hero Video */}
             <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px", marginBottom:"20px" }}>
-              <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Background Video</h3>
-              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>This video plays as the homepage hero background. Upload a landscape MP4 video (recommended: 1920×1080, under 20MB).</p>
-
-              {/* Current video preview */}
-              <div style={{ background:"#0D1B2A", borderRadius:"16px", overflow:"hidden", marginBottom:"20px", maxWidth:"600px" }}>
-                <video autoPlay muted loop playsInline style={{ width:"100%", maxHeight:"280px", objectFit:"cover", display:"block" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"6px" }}>
+                <span style={{ fontSize:"24px" }}>🎬</span>
+                <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:0, fontWeight:400 }}>Background Video</h3>
+              </div>
+              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>Plays fullscreen behind the homepage hero. Recommended: landscape MP4, 1920×1080, under 50MB.</p>
+              <div style={{ background:"#0D1B2A", borderRadius:"16px", overflow:"hidden", marginBottom:"20px", maxWidth:"560px" }}>
+                <video autoPlay muted loop playsInline style={{ width:"100%", maxHeight:"260px", objectFit:"cover", display:"block" }}>
                   <source src="/hero.mp4" type="video/mp4" />
                 </video>
-                <div style={{ padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,0.08)" }}>
-                  <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"12px", margin:0 }}>Current: /hero.mp4 — Replace by uploading below</p>
-                </div>
+                <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"11px", margin:0, padding:"10px 16px" }}>Current hero video — click below to replace</p>
               </div>
-
-              <MediaUpload
-                label="Upload Hero Video"
-                accept="video/mp4,video/mov,video/avi"
-                folder="hero"
-                onUpload={async (url) => {
-                  showToast("✅ Video uploaded! Update /public/hero.mp4 with this file: " + url);
-                }}
-                type="video"
-              />
-              <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"12px", marginTop:"10px" }}>
-                💡 After uploading, copy the URL and save the file as <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>hero.mp4</code> in the <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>/public</code> folder of your project.
-              </p>
+              <div style={{ background:"rgba(196,147,10,0.04)", border:"1px solid rgba(196,147,10,0.15)", borderRadius:"14px", padding:"20px" }}>
+                <p style={{ fontSize:"12px", fontWeight:700, color:gold, margin:"0 0 12px", textTransform:"uppercase", letterSpacing:"0.08em" }}>
+                  👆 Click the area below to upload — file saves automatically
+                </p>
+                <MediaUpload
+                  label="Hero Video"
+                  accept="video/mp4,video/mov,video/avi"
+                  folder="hero"
+                  onUpload={async (url) => {
+                    await fetch("/api/settings", {
+                      method:"POST",
+                      headers:{"Content-Type":"application/json"},
+                      body: JSON.stringify({ key_name:"hero_video", value:url })
+                    });
+                    showToast("✅ Hero video updated! Refresh homepage to see it.");
+                  }}
+                  type="video"
+                />
+              </div>
             </div>
 
-            {/* Hero slides info */}
+            {/* Hero Fallback Image */}
             <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px", marginBottom:"20px" }}>
-              <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Hero Slides</h3>
-              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>The hero rotates through product slides automatically. These are defined in <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>lib/data.ts</code>.</p>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"12px" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"6px" }}>
+                <span style={{ fontSize:"24px" }}>🖼️</span>
+                <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:0, fontWeight:400 }}>Fallback Image</h3>
+              </div>
+              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 20px" }}>Shown when the video can't load (slow connection or mobile). Recommended: landscape JPG, 1920×1080.</p>
+              <div style={{ background:"rgba(196,147,10,0.04)", border:"1px solid rgba(196,147,10,0.15)", borderRadius:"14px", padding:"20px" }}>
+                <p style={{ fontSize:"12px", fontWeight:700, color:gold, margin:"0 0 12px", textTransform:"uppercase", letterSpacing:"0.08em" }}>
+                  👆 Click below to upload fallback image
+                </p>
+                <MediaUpload
+                  label="Fallback Image"
+                  accept="image/jpeg,image/png,image/webp"
+                  folder="hero"
+                  onUpload={async (url) => {
+                    await fetch("/api/settings", {
+                      method:"POST",
+                      headers:{"Content-Type":"application/json"},
+                      body: JSON.stringify({ key_name:"hero_image", value:url })
+                    });
+                    showToast("✅ Fallback image saved!");
+                  }}
+                  type="image"
+                />
+              </div>
+            </div>
+
+            {/* Hero Slides */}
+            <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", padding:"28px" }}>
+              <h3 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:"0 0 6px", fontWeight:400 }}>Active Hero Slides</h3>
+              <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"13px", margin:"0 0 16px" }}>These product slides auto-rotate in the hero section.</p>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px" }}>
                 {[
                   { emoji:"🌿", label:"Turmeric", color:"#C4930A" },
                   { emoji:"🌶️", label:"Red Chilli", color:"#C0392B" },
@@ -549,25 +582,15 @@ export default function AdminPage() {
                   { emoji:"☕", label:"Coffee", color:"#3E1C00" },
                   { emoji:"🍚", label:"Rice", color:"#C4930A" },
                 ].map(s => (
-                  <div key={s.label} style={{ background:"#0D1B2A", borderRadius:"14px", padding:"20px", display:"flex", alignItems:"center", gap:"12px" }}>
-                    <span style={{ fontSize:"28px" }}>{s.emoji}</span>
+                  <div key={s.label} style={{ background:"#0D1B2A", borderRadius:"12px", padding:"16px 20px", display:"flex", alignItems:"center", gap:"12px" }}>
+                    <span style={{ fontSize:"24px" }}>{s.emoji}</span>
                     <div>
-                      <p style={{ color:"white", fontWeight:600, fontSize:"14px", margin:"0 0 2px" }}>{s.label}</p>
-                      <div style={{ width:"40px", height:"4px", borderRadius:"2px", background:s.color }} />
+                      <p style={{ color:"white", fontWeight:600, fontSize:"13px", margin:"0 0 4px" }}>{s.label}</p>
+                      <div style={{ width:"32px", height:"3px", borderRadius:"2px", background:s.color }} />
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Quick links */}
-            <div style={{ background:"rgba(196,147,10,0.06)", borderRadius:"16px", border:"1px solid rgba(196,147,10,0.2)", padding:"20px 24px" }}>
-              <p style={{ fontWeight:700, color:ink, fontSize:"14px", margin:"0 0 8px" }}>📌 To update hero content:</p>
-              <ol style={{ color:"rgba(13,27,42,0.6)", fontSize:"13px", margin:0, paddingLeft:"20px", lineHeight:2 }}>
-                <li>Upload your video above → copy the URL</li>
-                <li>Download the file and save as <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>hero.mp4</code> in <code style={{ background:"rgba(13,27,42,0.06)", padding:"2px 6px", borderRadius:"4px" }}>~/Downloads/shumitra-source-code/public/</code></li>
-                <li>Restart the dev server to see changes</li>
-              </ol>
             </div>
           </div>
         )}

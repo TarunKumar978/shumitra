@@ -66,39 +66,58 @@ export default function MediaUpload({ label, accept, folder, currentUrl, onUploa
           style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", background:"white", fontSize:"13px", color:ink, outline:"none", boxSizing:"border-box" as const, fontFamily:"DM Sans,sans-serif" }}
         />
       ) : (
-        <label style={{ display:"block", cursor: uploading ? "not-allowed" : "pointer" }}>
-          <div style={{ border:`2px dashed ${uploading ? gold : "rgba(13,27,42,0.2)"}`, borderRadius:"10px", padding:"20px", textAlign:"center", background: uploading ? `rgba(196,147,10,0.04)` : "#F5F0E8", transition:"all 0.2s" }}>
-            {uploading ? (
-              <div>
-                <p style={{ margin:"0 0 4px", fontSize:"20px" }}>⏳</p>
-                <p style={{ margin:0, fontSize:"13px", color:gold, fontWeight:600 }}>Uploading to Supabase...</p>
-              </div>
-            ) : (
-              <div>
-                <p style={{ margin:"0 0 6px", fontSize:"28px" }}>{type === "video" ? "🎬" : "🖼️"}</p>
-                <p style={{ margin:"0 0 2px", fontSize:"13px", color:ink, fontWeight:600 }}>Click to upload from device</p>
-                <p style={{ margin:0, fontSize:"10px", color:"rgba(13,27,42,0.4)" }}>{accept.replace(/image\//g,"").replace(/video\//g,"").replace(/,/g,", ").toUpperCase()}</p>
-              </div>
-            )}
-          </div>
-          <input type="file" accept={accept} style={{ display:"none" }} onChange={handleFile} disabled={uploading} />
-        </label>
+        <div>
+          <label style={{ display:"block", cursor: uploading ? "not-allowed" : "pointer" }}>
+            <div style={{ border:`2px dashed ${uploading ? gold : "rgba(13,27,42,0.2)"}`, borderRadius:"10px", padding:"24px", textAlign:"center", background: uploading ? `rgba(196,147,10,0.04)` : "#F5F0E8", transition:"all 0.2s" }}>
+              {uploading ? (
+                <div>
+                  <p style={{ margin:"0 0 8px", fontSize:"28px" }}>⏳</p>
+                  <p style={{ margin:"0 0 4px", fontSize:"14px", color:gold, fontWeight:700 }}>Uploading...</p>
+                  <p style={{ margin:0, fontSize:"11px", color:"rgba(13,27,42,0.4)" }}>Please wait</p>
+                </div>
+              ) : (
+                <div>
+                  <p style={{ margin:"0 0 8px", fontSize:"32px" }}>{type === "video" ? "🎬" : "🖼️"}</p>
+                  <p style={{ margin:"0 0 4px", fontSize:"14px", color:ink, fontWeight:700 }}>Click here to select file</p>
+                  <p style={{ margin:"0 0 10px", fontSize:"11px", color:"rgba(13,27,42,0.4)" }}>{accept.replace(/image\//g,"").replace(/video\//g,"").replace(/,/g,", ").toUpperCase()}</p>
+                  <div style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:gold, color:"white", padding:"8px 20px", borderRadius:"8px", fontSize:"12px", fontWeight:700 }}>
+                    📁 Choose File & Upload
+                  </div>
+                </div>
+              )}
+            </div>
+            <input type="file" accept={accept} style={{ display:"none" }} onChange={handleFile} disabled={uploading} />
+          </label>
+        </div>
       )}
 
       {preview && type === "image" && (
-        <div style={{ marginTop:"8px", borderRadius:"8px", overflow:"hidden", height:"80px", position:"relative", border:"1px solid rgba(13,27,42,0.1)" }}>
-          <img src={preview} alt="preview" style={{ width:"100%", height:"100%", objectFit:"cover" }}
-            onError={e => (e.currentTarget.style.display="none")} />
+        <div style={{ marginTop:"10px" }}>
+          <div style={{ borderRadius:"10px", overflow:"hidden", maxHeight:"160px", position:"relative", border:"1px solid rgba(13,27,42,0.1)" }}>
+            <img src={preview} alt="preview" style={{ width:"100%", height:"160px", objectFit:"cover", display:"block" }}
+              onError={e => (e.currentTarget.style.display="none")} />
+            <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%)" }} />
+            <p style={{ position:"absolute", bottom:"8px", left:"12px", color:"white", fontSize:"11px", margin:0, fontWeight:600 }}>✅ Uploaded successfully</p>
+          </div>
           <button type="button" onClick={() => { setPreview(""); setUrlInput(""); onUpload(""); }}
-            style={{ position:"absolute", top:"4px", right:"4px", background:"rgba(0,0,0,0.6)", border:"none", borderRadius:"50%", color:"white", width:"22px", height:"22px", cursor:"pointer", fontSize:"14px", display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 }}>×</button>
+            style={{ marginTop:"8px", display:"inline-flex", alignItems:"center", gap:"6px", background:"#fef2f2", border:"1px solid #fecaca", color:"#ef4444", padding:"7px 14px", borderRadius:"8px", cursor:"pointer", fontSize:"12px", fontWeight:600 }}>
+            🗑️ Remove Image
+          </button>
         </div>
       )}
       {preview && type === "video" && (
-        <div style={{ marginTop:"8px", background:"rgba(13,27,42,0.05)", borderRadius:"8px", padding:"10px 14px", display:"flex", alignItems:"center", gap:"8px" }}>
-          <span style={{ fontSize:"18px" }}>🎬</span>
-          <p style={{ margin:0, fontSize:"11px", color:"rgba(13,27,42,0.6)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{preview}</p>
+        <div style={{ marginTop:"10px" }}>
+          <div style={{ background:"rgba(13,27,42,0.04)", borderRadius:"10px", padding:"12px 16px", display:"flex", alignItems:"center", gap:"10px", border:"1px solid rgba(13,27,42,0.08)" }}>
+            <span style={{ fontSize:"24px" }}>🎬</span>
+            <div style={{ flex:1, overflow:"hidden" }}>
+              <p style={{ margin:"0 0 2px", fontSize:"12px", fontWeight:700, color:"#16a34a" }}>✅ Uploaded successfully</p>
+              <p style={{ margin:0, fontSize:"11px", color:"rgba(13,27,42,0.5)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{preview}</p>
+            </div>
+          </div>
           <button type="button" onClick={() => { setPreview(""); setUrlInput(""); onUpload(""); }}
-            style={{ background:"none", border:"none", cursor:"pointer", color:"#ef4444", fontSize:"18px", padding:0, flexShrink:0 }}>×</button>
+            style={{ marginTop:"8px", display:"inline-flex", alignItems:"center", gap:"6px", background:"#fef2f2", border:"1px solid #fecaca", color:"#ef4444", padding:"7px 14px", borderRadius:"8px", cursor:"pointer", fontSize:"12px", fontWeight:600 }}>
+            🗑️ Remove Video
+          </button>
         </div>
       )}
     </div>
