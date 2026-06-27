@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
             <div style="background:white;border-radius:10px;padding:16px;margin:16px 0;">
               <p style="margin:0 0 6px;"><strong>Login URL:</strong> localhost:3000/admin</p>
               <p style="margin:0 0 6px;"><strong>Email:</strong> ${email}</p>
-              <p style="margin:0;"><strong>Password:</strong> ${password}</p>
+              <p style="margin:0;color:#888;font-size:12px;">Use the password set by your administrator. Use "Forgot Password" to reset it anytime.</p>
             </div>
             <p style="color:#888;font-size:12px;">Please change your password after first login.</p>
           </div>

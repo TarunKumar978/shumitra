@@ -58,7 +58,7 @@ export default function AdminPage() {
   const [editingHeroSlide, setEditingHeroSlide] = useState<number|null>(null);
   const [heroSlideForm, setHeroSlideForm] = useState<any>({ label:"", subtitle:"", image_url:"", video_url:"", accent_color:"#C4930A" });
   const fetchHeroSlides = async () => {
-    const res = await fetch("/api/hero-slides");
+    const res = await adminFetch("/api/hero-slides");
     const data = await res.json();
     if (data.data) setDbHeroSlides(data.data);
   };
@@ -79,10 +79,10 @@ export default function AdminPage() {
   const fetchAll = async () => {
     setLoading(true);
     const [inqRes, fbRes, tRes, prodRes] = await Promise.all([
-      fetch("/api/inquiries"),
-      fetch("/api/feedback"),
-      fetch("/api/testimonials"),
-      fetch("/api/products"),
+      adminFetch("/api/inquiries"),
+      adminFetch("/api/feedback"),
+      adminFetch("/api/testimonials"),
+      adminFetch("/api/products"),
     ]);
     const [inqData, fbData, tData, prodData] = await Promise.all([inqRes.json(), fbRes.json(), tRes.json(), prodRes.json()]);
     if (inqData.data) setInquiries(inqData.data);
@@ -161,7 +161,7 @@ export default function AdminPage() {
             <button id="loginBtn" disabled={loginLoading} onClick={async () => {
               if (!loginEmail || !loginPassword) return setLoginError("Please enter email and password");
               setLoginLoading(true); setLoginError("");
-              const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+              const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
                 body: JSON.stringify({ action:"login", email:loginEmail, password:loginPassword }) });
               const data = await res.json();
               setLoginLoading(false);
@@ -170,6 +170,10 @@ export default function AdminPage() {
               setCurrentUser(data.user);
               setSessionId(data.session_id);
               setSessionStart(new Date());
+              // Generate admin token for API calls
+              const tokenData = `${data.user.email}:${Date.now()}`;
+              const token = btoa(tokenData);
+              localStorage.setItem("adminToken", token);
             }
               else setLoginError(data.error || "Invalid credentials");
             }} style={{ width:"100%", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"14px", borderRadius:"12px", border:"none", cursor: loginLoading ? "not-allowed" : "pointer", fontSize:"15px", opacity: loginLoading ? 0.7 : 1 }}>
@@ -195,7 +199,7 @@ export default function AdminPage() {
               <button onClick={async () => {
                 if (!forgotEmail) return setForgotMsg("Enter your email");
                 setForgotMsg("Sending...");
-                const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
                   body: JSON.stringify({ action:"forgot", email:forgotEmail }) });
                 const data = await res.json();
                 if (data.success) { setForgotMsg("✅ Reset token sent! Check your email."); setTimeout(() => setResetMode(true), 1500); }
@@ -236,7 +240,7 @@ export default function AdminPage() {
               <button onClick={async () => {
                 if (!resetToken || !newPassword) return setForgotMsg("Fill all fields");
                 if (newPassword.length < 8) return setForgotMsg("Password must be at least 8 characters");
-                const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
                   body: JSON.stringify({ action:"reset", token:resetToken, newPassword }) });
                 const data = await res.json();
                 if (data.success) { setForgotMsg("✅ Password reset! Please login."); setTimeout(() => { setResetMode(false); setForgotMode(false); setForgotMsg(""); }, 1500); }
@@ -417,7 +421,7 @@ export default function AdminPage() {
                 <div style={{ display:"flex", gap:"10px" }}>
                   <button onClick={async () => {
                     if (!newProduct.name) return;
-                    const res = await fetch("/api/products", {
+                    const res = await adminFetch("/api/products", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
@@ -475,7 +479,7 @@ export default function AdminPage() {
                           }} style={{ padding:"8px 14px", borderRadius:"10px", border:"1px solid rgba(196,147,10,0.3)", background:"rgba(196,147,10,0.08)", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#C4930A" }}>Edit</button>
                           <button onClick={async () => {
                             if (!confirm("Delete this product?")) return;
-                            await fetch("/api/products", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
+                            await adminFetch("/api/products", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
                             setDbProducts(ps => ps.filter(p => p.id !== product.id));
                             showToast("🗑️ Product deleted");
                           }} style={{ padding:"8px 14px", borderRadius:"10px", border:"1px solid #fecaca", background:"#fef2f2", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Delete</button>
@@ -497,7 +501,7 @@ export default function AdminPage() {
                                   <button onClick={() => setEditingVariety({ ...v, product_id: product.id })} style={{ padding:"4px 10px", borderRadius:"6px", border:"1px solid rgba(196,147,10,0.3)", background:"rgba(196,147,10,0.08)", cursor:"pointer", fontSize:"11px", color:"#C4930A", fontWeight:600 }}>Edit</button>
                                   <button onClick={async () => {
                                     if (!confirm("Delete variety?")) return;
-                                    await fetch("/api/varieties", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: v.id, product_id: product.id }) });
+                                    await adminFetch("/api/varieties", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: v.id, product_id: product.id }) });
                                     setDbProducts(ps => ps.map(p => p.id === product.id ? { ...p, varieties: p.varieties.filter((x: any) => x.id !== v.id) } : p));
                                     showToast("🗑️ Variety deleted");
                                   }} style={{ padding:"4px 10px", borderRadius:"6px", border:"1px solid #fecaca", background:"#fef2f2", cursor:"pointer", fontSize:"11px", color:"#ef4444" }}>Delete</button>
@@ -533,7 +537,7 @@ export default function AdminPage() {
                               <button onClick={async () => {
                                 if (!newVariety.name) return;
                                 const variety = { product_id: product.id, name: newVariety.name, image_url: newVariety.image||null, video_url: newVariety.video||null };
-                                const res = await fetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(variety) });
+                                const res = await adminFetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(variety) });
                                 const data = await res.json();
                                 if (data.success) {
                                   await fetchAll();
@@ -594,7 +598,7 @@ export default function AdminPage() {
                           </div>
                           <div style={{ display:"flex", gap:"4px" }}>
                             <button onClick={() => setEditingVariety({ ...v, product_id: product.id })} style={{ padding:"6px", borderRadius:"8px", border:"none", background:"none", cursor:"pointer", color:"#C4930A" }}><Edit size={13}/></button>
-                            <button onClick={async () => { if (!confirm("Delete variety?")) return; await fetch("/api/varieties", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: v.id, product_id: product.id }) }); await fetchAll(); showToast("🗑️ Deleted"); }} style={{ padding:"6px", borderRadius:"8px", border:"none", background:"none", cursor:"pointer", color:"#ef4444" }}><Trash2 size={13}/></button>
+                            <button onClick={async () => { if (!confirm("Delete variety?")) return; await adminFetch("/api/varieties", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: v.id, product_id: product.id }) }); await fetchAll(); showToast("🗑️ Deleted"); }} style={{ padding:"6px", borderRadius:"8px", border:"none", background:"none", cursor:"pointer", color:"#ef4444" }}><Trash2 size={13}/></button>
                           </div>
                         </div>
                       ))}
@@ -643,7 +647,7 @@ export default function AdminPage() {
                         <div style={{ display:"flex", gap:"10px" }}>
                           <button onClick={async () => {
                             if (!newVariety.name) return;
-                            const res = await fetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ product_id: product.id, name: newVariety.name, origin: newVariety.origin||null, grade: newVariety.grade||null, min_order: newVariety.minOrder||null, moisture: newVariety.moisture||null, packing: newVariety.packing||null, image: newVariety.image||null, video: newVariety.video||null, description: newVariety.description||null }) });
+                            const res = await adminFetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ product_id: product.id, name: newVariety.name, origin: newVariety.origin||null, grade: newVariety.grade||null, min_order: newVariety.minOrder||null, moisture: newVariety.moisture||null, packing: newVariety.packing||null, image: newVariety.image||null, video: newVariety.video||null, description: newVariety.description||null }) });
                             const data = await res.json();
                             if (data.success) { await fetchAll(); showToast("✅ Variety saved!"); }
                             else showToast("❌ " + (data.error||"Error"));
@@ -709,7 +713,7 @@ export default function AdminPage() {
                       </div>
                       <div style={{ display:"flex", gap:"10px" }}>
                         <button onClick={async () => {
-                          const res = await fetch("/api/hero-slides", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: slide.id, ...heroSlideForm }) });
+                          const res = await adminFetch("/api/hero-slides", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: slide.id, ...heroSlideForm }) });
                           const data = await res.json();
                           if (data.success) { await fetchHeroSlides(); setEditingHeroSlide(null); showToast("✅ Slide updated!"); }
                           else showToast("❌ " + data.error);
@@ -745,7 +749,7 @@ export default function AdminPage() {
                           style={{ padding:"8px 16px", border:"1px solid rgba(196,147,10,0.3)", background:"rgba(196,147,10,0.08)", borderRadius:"10px", cursor:"pointer", fontSize:"12px", fontWeight:600, color:gold }}>Edit</button>
                         <button onClick={async () => {
                           if (!confirm("Delete this slide?")) return;
-                          await fetch("/api/hero-slides", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: slide.id }) });
+                          await adminFetch("/api/hero-slides", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: slide.id }) });
                           await fetchHeroSlides();
                           showToast("🗑️ Slide deleted");
                         }} style={{ padding:"8px 16px", border:"1px solid #fecaca", background:"#fef2f2", borderRadius:"10px", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Delete</button>
@@ -791,7 +795,7 @@ export default function AdminPage() {
                 <div style={{ display:"flex", gap:"10px" }}>
                   <button onClick={async () => {
                     if (!heroSlideForm.label) return showToast("❌ Label is required");
-                    const res = await fetch("/api/hero-slides", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(heroSlideForm) });
+                    const res = await adminFetch("/api/hero-slides", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(heroSlideForm) });
                     const data = await res.json();
                     if (data.success) { await fetchHeroSlides(); setAddingHeroSlide(false); setHeroSlideForm({ label:"", subtitle:"", image_url:"", video_url:"", accent_color:"#C4930A" }); showToast("✅ Slide added!"); }
                     else showToast("❌ " + data.error);
@@ -828,7 +832,7 @@ export default function AdminPage() {
               </div>
               {currentUser?.role === "super_admin" && (
                 <button onClick={async () => {
-                  const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                  const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
                   const data = await res.json();
                   if (data.data) setMembers(data.data);
                   setAddingMember(true);
@@ -849,9 +853,10 @@ export default function AdminPage() {
               </div>
               <button onClick={async () => {
                 if (sessionId) {
-                  await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
+                  await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"},
                     body: JSON.stringify({ action:"logout", session_id:sessionId, email:currentUser?.email }) });
                 }
+                localStorage.removeItem("adminToken");
                 setAuthed(false); setCurrentUser(null); setLoginEmail(""); setLoginPassword("");
                 setSessionId(null); setSessionStart(null); setSessionTime("0m"); setShowPassword(false);
               }}
@@ -864,7 +869,7 @@ export default function AdminPage() {
             <div style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", overflow:"hidden", marginBottom:"20px" }}>
               <div style={{ padding:"20px 24px", borderBottom:"1px solid rgba(13,27,42,0.06)" }}>
                 <button onClick={async () => {
-                  const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                  const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
                   const data = await res.json();
                   if (data.data) setMembers(data.data);
                 }} style={{ background:"none", border:"none", cursor:"pointer", color:gold, fontSize:"13px", fontWeight:600 }}>↻ Load Members</button>
@@ -897,8 +902,8 @@ export default function AdminPage() {
                       {currentUser?.role === "super_admin" && m.role !== "super_admin" && m.active === 1 && (
                         <button onClick={async () => {
                           if (!confirm(`Remove ${m.name} from admin access?`)) return;
-                          await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"remove_member", email:m.email }) });
-                          const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                          await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"remove_member", email:m.email }) });
+                          const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
                           const data = await res.json();
                           if (data.data) setMembers(data.data);
                           showToast("🗑️ Member removed");
@@ -943,13 +948,13 @@ export default function AdminPage() {
                   <button onClick={async () => {
                     if (!memberForm.name || !memberForm.email || !memberForm.password) return showToast("❌ Fill all fields");
                     if (memberForm.password.length < 8) return showToast("❌ Password min 8 characters");
-                    const res = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"add_member", ...memberForm }) });
+                    const res = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"add_member", ...memberForm }) });
                     const data = await res.json();
                     if (data.success) {
                       showToast("✅ Member added!");
                       setAddingMember(false);
                       setMemberForm({ name:"", email:"", password:"", role:"admin" });
-                      const r2 = await fetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
+                      const r2 = await adminFetch("/api/admin-auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"list_members" }) });
                       const d2 = await r2.json();
                       if (d2.data) setMembers(d2.data);
                     } else showToast("❌ " + data.error);
@@ -1012,7 +1017,7 @@ export default function AdminPage() {
               <div style={{ display:"flex", gap:"10px", marginTop:"24px" }}>
                 <button onClick={async () => {
                   const { id, ...updates } = editingProduct;
-                  const res = await fetch("/api/products", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id, ...updates }) });
+                  const res = await adminFetch("/api/products", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id, ...updates }) });
                   const data = await res.json();
                   if (data.success) { await fetchAll(); setEditingProduct(null); showToast("✅ Product updated!"); }
                   else showToast("❌ " + (data.error||"Error"));
@@ -1096,7 +1101,7 @@ export default function AdminPage() {
               <div style={{ display:"flex", gap:"10px", marginTop:"24px" }}>
                 <button onClick={async () => {
                   const { product_id, ...updates } = editingVariety;
-                  const res = await fetch("/api/varieties", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ ...updates, product_id }) });
+                  const res = await adminFetch("/api/varieties", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ ...updates, product_id }) });
                   const data = await res.json();
                   if (data.success) { await fetchAll(); setEditingVariety(null); showToast("✅ Variety updated!"); }
                   else showToast("❌ " + (data.error||"Error"));
@@ -1157,7 +1162,7 @@ export default function AdminPage() {
                         {inq.phone && <a href={`https://wa.me/${inq.phone.replace(/\D/g,"")}`} target="_blank" rel="noopener noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:"6px", fontSize:"12px", padding:"8px 14px", background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:"10px", textDecoration:"none", color:"#16a34a", fontWeight:600 }}>💬 WhatsApp</a>}
                         {inq.status === "new" && (
                           <button onClick={async () => {
-                            await fetch("/api/inquiries", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:inq.id, status:"replied" }) });
+                            await adminFetch("/api/inquiries", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:inq.id, status:"replied" }) });
                             setInquiries(iq => iq.map(i => i.id === inq.id ? { ...i, status:"replied" } : i));
                             showToast("✅ Marked as replied");
                           }} style={{ display:"inline-flex", alignItems:"center", gap:"6px", fontSize:"12px", padding:"8px 14px", background:`rgba(196,147,10,0.08)`, border:`1px solid rgba(196,147,10,0.25)`, borderRadius:"10px", cursor:"pointer", color:gold, fontWeight:700 }}>
@@ -1166,7 +1171,7 @@ export default function AdminPage() {
                         )}
                         <button onClick={async () => {
                           if (!confirm("Delete this inquiry?")) return;
-                          await fetch("/api/inquiries", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:inq.id }) });
+                          await adminFetch("/api/inquiries", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:inq.id }) });
                           setInquiries(iq => iq.filter(i => i.id !== inq.id));
                           showToast("🗑️ Deleted");
                         }} style={{ fontSize:"12px", padding:"8px 14px", border:"1px solid #fecaca", background:"#fef2f2", borderRadius:"10px", cursor:"pointer", color:"#ef4444", fontWeight:600 }}>Delete</button>
@@ -1214,7 +1219,7 @@ export default function AdminPage() {
                     <div style={{ display:"flex", gap:"8px" }}>
                       {!f.approved ? (
                         <button onClick={async () => {
-                          await fetch("/api/feedback", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:f.id, approved:true }) });
+                          await adminFetch("/api/feedback", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:f.id, approved:true }) });
                           setFeedback(fb => fb.map(x => x.id === f.id ? { ...x, approved:true } : x));
                           showToast("✅ Feedback approved & live!");
                         }} style={{ display:"inline-flex", alignItems:"center", gap:"4px", fontSize:"12px", padding:"8px 16px", background:"#16a34a", color:"white", border:"none", borderRadius:"8px", cursor:"pointer", fontWeight:700 }}>
@@ -1222,7 +1227,7 @@ export default function AdminPage() {
                         </button>
                       ) : (
                         <button onClick={async () => {
-                          await fetch("/api/feedback", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:f.id, approved:false }) });
+                          await adminFetch("/api/feedback", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:f.id, approved:false }) });
                           setFeedback(fb => fb.map(x => x.id === f.id ? { ...x, approved:false } : x));
                           showToast("Feedback removed from site");
                         }} style={{ fontSize:"12px", padding:"8px 16px", border:"1px solid rgba(13,27,42,0.15)", background:"white", borderRadius:"8px", cursor:"pointer", color:"rgba(13,27,42,0.5)", fontWeight:600 }}>
@@ -1231,7 +1236,7 @@ export default function AdminPage() {
                       )}
                       <button onClick={async () => {
                         if (!confirm("Delete this feedback?")) return;
-                        await fetch("/api/feedback", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:f.id }) });
+                        await adminFetch("/api/feedback", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:f.id }) });
                         setFeedback(fb => fb.filter(x => x.id !== f.id));
                         showToast("🗑️ Deleted");
                       }} style={{ fontSize:"12px", padding:"8px 16px", border:"1px solid #fecaca", background:"#fef2f2", borderRadius:"8px", cursor:"pointer", color:"#ef4444", fontWeight:600 }}>Delete</button>
@@ -1296,11 +1301,11 @@ export default function AdminPage() {
                   <button onClick={async () => {
                     if (!tForm.name || !tForm.message) return;
                     if (editingT.id) {
-                      await fetch("/api/testimonials", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editingT.id, ...tForm }) });
+                      await adminFetch("/api/testimonials", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editingT.id, ...tForm }) });
                       setTestimonials(ts => ts.map(x => x.id === editingT.id ? { ...x, ...tForm } : x));
                       showToast("✅ Testimonial updated!");
                     } else {
-                      const res = await fetch("/api/testimonials", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(tForm) });
+                      const res = await adminFetch("/api/testimonials", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(tForm) });
                       const data = await res.json();
                       if (data.data) setTestimonials(ts => [data.data[0], ...ts]);
                       showToast("✅ Testimonial added & live!");
@@ -1330,7 +1335,7 @@ export default function AdminPage() {
                     <button onClick={() => { setEditingT(t); setTForm({ name:t.name, company:t.company, country:t.country, role:t.role, rating:t.rating, message:t.message, active:t.active }); }}
                       style={{ fontSize:"11px", padding:"6px 12px", border:"1px solid rgba(13,27,42,0.12)", background:"white", borderRadius:"8px", cursor:"pointer", color:"rgba(13,27,42,0.6)", fontWeight:600 }}>Edit</button>
                     <button onClick={async () => {
-                      await fetch("/api/testimonials", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:t.id, active:!t.active }) });
+                      await adminFetch("/api/testimonials", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:t.id, active:!t.active }) });
                       setTestimonials(ts => ts.map(x => x.id === t.id ? { ...x, active:!x.active } : x));
                       showToast(t.active ? "Hidden from site" : "✅ Now live on site!");
                     }} style={{ fontSize:"11px", padding:"6px 12px", border:"1px solid rgba(13,27,42,0.12)", background:"white", borderRadius:"8px", cursor:"pointer", color:"rgba(13,27,42,0.6)", fontWeight:600 }}>
@@ -1338,7 +1343,7 @@ export default function AdminPage() {
                     </button>
                     <button onClick={async () => {
                       if (!confirm("Delete this testimonial?")) return;
-                      await fetch("/api/testimonials", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:t.id }) });
+                      await adminFetch("/api/testimonials", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:t.id }) });
                       setTestimonials(ts => ts.filter(x => x.id !== t.id));
                       showToast("🗑️ Deleted");
                     }} style={{ fontSize:"11px", padding:"6px 12px", border:"1px solid #fecaca", background:"#fef2f2", borderRadius:"8px", cursor:"pointer", color:"#ef4444", fontWeight:600 }}>Delete</button>

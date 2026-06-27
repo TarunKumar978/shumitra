@@ -3,7 +3,22 @@ import mysql from "mysql2/promise";
 
 const db = mysql.createPool({ host:"localhost", user:"root", password:"", database:"shumitra" });
 
+// Check admin token
+function isAdminAuthed(req: Request): boolean {
+  const token = req.headers.get("x-admin-token");
+  if (!token) return false;
+  try {
+    const decoded = Buffer.from(token, "base64").toString("utf8");
+    const [email, timestamp] = decoded.split(":");
+    if (!email || !timestamp) return false;
+    if (Date.now() - parseInt(timestamp) > 86400000) return false; // 24h expiry
+    return email.includes("@");
+  } catch { return false; }
+}
+
+
 export async function POST(req: NextRequest) {
+  if (!isAdminAuthed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await req.json();
     const id = crypto.randomUUID();
@@ -18,6 +33,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!isAdminAuthed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id, product_id, created_at, ...updates } = await req.json();
     if (updates.images && Array.isArray(updates.images)) {
@@ -30,6 +46,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!isAdminAuthed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id, product_id } = await req.json();
     await db.query(`DELETE FROM varieties WHERE id = ? AND product_id = ?`, [id, product_id]);
