@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mysql from "mysql2/promise";
 
-const db = mysql.createPool({ host:"localhost", user:"root", password:"", database:"shumitra" });
+const db = mysql.createPool({ host:"localhost", user:"root", password:"Shumitra@2025!", database:"shumitra" });
 
 // Check admin token
 function isAdminAuthed(req: Request): boolean {

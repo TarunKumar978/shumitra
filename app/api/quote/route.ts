@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import mysql from "mysql2/promise";
 
-const db = mysql.createPool({ host:"localhost", user:"root", password:"", database:"shumitra" });
+const db = mysql.createPool({ host:"localhost", user:"root", password:"Shumitra@2025!", database:"shumitra" });
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
