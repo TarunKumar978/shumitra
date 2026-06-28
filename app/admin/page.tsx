@@ -654,7 +654,7 @@ export default function AdminPage() {
                       </button>
                     </div>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px" }}>
-                      {product.varieties.map(v => (
+                      {product.varieties.map((v: any) => (
                         <div key={v.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:cream, borderRadius:"10px", padding:"10px 14px" }}>
                           <div>
                             <p style={{ fontWeight:600, color:ink, fontSize:"13px", margin:"0 0 2px" }}>{v.name}</p>

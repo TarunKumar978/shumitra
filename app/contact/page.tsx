@@ -12,7 +12,7 @@ export default function ContactPage() {
   });
 
   const selectedProduct = products.find(p => p.id === form.product);
-  const selectedVariety = selectedProduct?.varieties.find(v => v.id === form.variety);
+  const selectedVariety = selectedProduct?.varieties.find((v: any) => v.id === form.variety);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +115,7 @@ Sent via Shumitra Exports website inquiry form.`;
                     <div style={{ marginBottom:"24px" }}>
                       <label style={{ fontSize:"13px", fontWeight:600, color:"rgba(13,27,42,0.6)", display:"block", marginBottom:"10px" }}>Select Variety (optional)</label>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px" }}>
-                        {selectedProduct.varieties.map(v => (
+                        {selectedProduct.varieties.map((v: any) => (
                           <button type="button" key={v.id} onClick={() => setForm(f => ({ ...f, variety:v.id }))}
                             style={{ padding:"12px 14px", borderRadius:"12px", border: form.variety===v.id ? "2px solid #C4930A" : "1px solid rgba(13,27,42,0.1)", background: form.variety===v.id ? "rgba(196,147,10,0.08)" : "white", cursor:"pointer", textAlign:"left" }}>
                             <span style={{ fontWeight:600, fontSize:"13px", color:"#0D1B2A", display:"block" }}>{v.name}</span>

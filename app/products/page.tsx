@@ -154,7 +154,7 @@ export default function ProductsPage() {
 
                     {/* Varieties */}
                     <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"14px", flex:1 }}>
-                      {product.varieties.slice(0,3).map(v => (
+                      {product.varieties.slice(0,3).map((v: any) => (
                         <span key={v.id} style={{ fontSize:"10px", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.08)", color:"rgba(13,27,42,0.5)", borderRadius:"6px", padding:"2px 8px" }}>
                           {v.name.split(" ").slice(0,2).join(" ")}
                         </span>
