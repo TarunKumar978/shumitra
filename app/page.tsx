@@ -447,7 +447,7 @@ export default function Home() {
                       <span style={{ fontSize:"10px", background:"rgba(196,147,10,0.1)", border:"1px solid rgba(196,147,10,0.25)", color:"#C4930A", borderRadius:"6px", padding:"2px 8px", fontWeight:600 }}>{photo?.spec}</span>
                     </div>
                     <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"14px", flex:1 }}>
-                      {product.varieties.slice(0,3).map(v => (
+                      {product.varieties.slice(0,3).map((v: any) => (
                         <span key={v.id} style={{ fontSize:"9px", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.08)", color:"rgba(13,27,42,0.5)", borderRadius:"6px", padding:"2px 7px" }}>{v.name.split(" ")[0]}</span>
                       ))}
                       {product.varieties.length > 3 && <span style={{ fontSize:"9px", color:"#C4930A", fontWeight:700 }}>+{product.varieties.length-3}</span>}
