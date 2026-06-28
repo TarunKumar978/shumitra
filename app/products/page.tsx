@@ -121,7 +121,8 @@ export default function ProductsPage() {
                   style={{ background:"white", borderRadius:"20px", overflow:"hidden", boxShadow: isHovered ? "0 20px 56px rgba(13,27,42,0.16)" : "0 2px 12px rgba(13,27,42,0.06)", transform: isHovered ? "translateY(-6px)" : "translateY(0)", transition:"all 0.3s cubic-bezier(0.4,0,0.2,1)", border:"1px solid rgba(13,27,42,0.06)", display:"flex", flexDirection:"column" }}>
 
                   {/* Image */}
-                  <div style={{ position:"relative", height:"200px", overflow:"hidden", flexShrink:0 }}>
+                  <Link href={`/products/${product.id}`} style={{ textDecoration:"none", display:"block" }}>
+                  <div style={{ position:"relative", height:"200px", overflow:"hidden", flexShrink:0, cursor:"pointer" }}>
                     <img src={photo?.img} alt={product.name}
                       style={{ width:"100%", height:"100%", objectFit:"cover", transform: isHovered ? "scale(1.07)" : "scale(1)", transition:"transform 0.5s ease" }} />
                     <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(13,27,42,0.8) 0%, rgba(13,27,42,0.1) 50%, transparent 100%)" }} />
@@ -142,6 +143,7 @@ export default function ProductsPage() {
                       </span>
                     </div>
                   </div>
+                  </Link>
 
                   {/* Content */}
                   <div style={{ padding:"16px", flex:1, display:"flex", flexDirection:"column" }}>
