@@ -261,7 +261,7 @@ export default function Home() {
   }, []);
 
   const products = [
-    ...staticProducts,
+    ...(!dbLoaded ? staticProducts : []),
     ...dbProducts.map((p: any) => ({
       id: p.id,
       name: p.name,
