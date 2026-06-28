@@ -76,7 +76,7 @@ export default function ProductsPage() {
             {/* Category pills */}
             <div style={{ display:"flex", gap:"8px" }}>
               {([["all","All Products", "100+"], ["spices","Spices", "50+"], ["commodities","Commodities", "50+"]] as [string, string, string][]).map(([val, label, count]) => (
-                <button key={val} onClick={() => setCat(val)}
+                <button key={val} onClick={() => setCat(val as any)}
                   style={{ display:"inline-flex", alignItems:"center", gap:"6px", padding:"10px 20px", borderRadius:"50px", fontSize:"13px", fontWeight:600, cursor:"pointer", transition:"all 0.2s", border: cat === val ? "2px solid #0D1B2A" : "1px solid rgba(13,27,42,0.15)", background: cat === val ? "#0D1B2A" : "white", color: cat === val ? "white" : "rgba(13,27,42,0.6)" }}>
                   {label}
                   <span style={{ fontSize:"10px", background: cat === val ? "rgba(255,255,255,0.15)" : "rgba(13,27,42,0.07)", borderRadius:"50px", padding:"1px 7px", fontWeight:700 }}>{count}</span>
