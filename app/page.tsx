@@ -248,6 +248,8 @@ const productPhotos: Record<string, { img: string; spec: string; origin: string 
 };
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [dbProducts, setDbProducts] = useState<any[]>([]);
   const [dbLoaded, setDbLoaded] = useState(false);
 
@@ -436,7 +438,7 @@ export default function Home() {
                       onMouseLeave={e => (e.currentTarget.style.transform="scale(1)")} />
                     </Link>
                     <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top,rgba(13,27,42,0.7) 0%,transparent 50%)", pointerEvents:"none" }} />
-                    <span style={{ position:"absolute", top:"10px", left:"10px", fontSize:"24px", pointerEvents:"none" }}>{product.emoji}</span>
+                    <span style={{ position:"absolute", top:"10px", left:"10px", fontSize:"24px", pointerEvents:"none" }}>{mounted ? product.emoji : ""}</span>
                     <span style={{ position:"absolute", bottom:"10px", left:"12px", fontSize:"11px", color:"white", fontWeight:600, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(6px)", padding:"3px 10px", borderRadius:"20px", border:"1px solid rgba(255,255,255,0.15)", pointerEvents:"none" }}>
                       📍 {photo?.origin}
                     </span>
