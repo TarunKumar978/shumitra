@@ -84,6 +84,7 @@ export default function GlobeComponent() {
     const cx = size/2, cy = size/2, R = size * 0.44;
 
     function draw() {
+      if (!ctx) return;
       ctx.clearRect(0, 0, size, size);
 
       // Glow
