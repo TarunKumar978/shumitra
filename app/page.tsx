@@ -430,12 +430,14 @@ export default function Home() {
               return (
                 <div key={product.id} style={{ background:"white", borderRadius:"20px", overflow:"hidden", border:"1px solid rgba(13,27,42,0.08)", boxShadow:"0 2px 12px rgba(0,0,0,0.05)", display:"flex", flexDirection:"column" }}>
                   <div style={{ position:"relative", height:"160px", overflow:"hidden", flexShrink:0 }}>
+                    <Link href={`/products/${product.id}`} style={{ display:"block", width:"100%", height:"100%", cursor:"pointer" }}>
                     <img src={photo?.img} alt={product.name} style={{ width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.4s ease" }}
                       onMouseEnter={e => (e.currentTarget.style.transform="scale(1.06)")}
                       onMouseLeave={e => (e.currentTarget.style.transform="scale(1)")} />
-                    <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top,rgba(13,27,42,0.7) 0%,transparent 50%)" }} />
-                    <span style={{ position:"absolute", top:"10px", left:"10px", fontSize:"24px" }}>{product.emoji}</span>
-                    <span style={{ position:"absolute", bottom:"10px", left:"12px", fontSize:"11px", color:"white", fontWeight:600, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(6px)", padding:"3px 10px", borderRadius:"20px", border:"1px solid rgba(255,255,255,0.15)" }}>
+                    </Link>
+                    <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top,rgba(13,27,42,0.7) 0%,transparent 50%)", pointerEvents:"none" }} />
+                    <span style={{ position:"absolute", top:"10px", left:"10px", fontSize:"24px", pointerEvents:"none" }}>{product.emoji}</span>
+                    <span style={{ position:"absolute", bottom:"10px", left:"12px", fontSize:"11px", color:"white", fontWeight:600, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(6px)", padding:"3px 10px", borderRadius:"20px", border:"1px solid rgba(255,255,255,0.15)", pointerEvents:"none" }}>
                       📍 {photo?.origin}
                     </span>
                   </div>
