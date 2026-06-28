@@ -48,7 +48,7 @@ export default function ProductsPage() {
   const filtered = products.filter(p => {
     const matchCat = cat === "all" || p.category === cat;
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.varieties.some(v => v.name.toLowerCase().includes(search.toLowerCase()));
+      p.varieties.some((v: any) => v.name.toLowerCase().includes(search.toLowerCase()));
     return matchCat && matchSearch;
   });
 
