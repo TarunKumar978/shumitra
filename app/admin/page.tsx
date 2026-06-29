@@ -600,7 +600,7 @@ export default function AdminPage() {
                             <div style={{ display:"flex", gap:"8px" }}>
                               <button onClick={async () => {
                                 if (!newVariety.name) return;
-                                const variety = { product_id: product.id, name: newVariety.name, image_url: newVariety.image||null, video_url: newVariety.video||null };
+                                const variety = { product_id: product.id, name: newVariety.name, image: newVariety.image||null, video: newVariety.video||null };
                                 const res = await adminFetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(variety) });
                                 const data = await res.json();
                                 if (data.success) {
@@ -1082,8 +1082,18 @@ export default function AdminPage() {
               </div>
               <div style={{ display:"flex", gap:"10px", marginTop:"24px" }}>
                 <button onClick={async () => {
-                  const { id, ...updates } = editingProduct;
-                  const res = await adminFetch("/api/products", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id, ...updates }) });
+                  const payload = {
+                    id: editingProduct.id,
+                    name: editingProduct.name||null,
+                    emoji: editingProduct.emoji||null,
+                    category: editingProduct.category||null,
+                    tagline: editingProduct.tagline||null,
+                    description: editingProduct.description||null,
+                    hero_color: editingProduct.hero_color||null,
+                    hero_image: editingProduct.hero_image||null,
+                    active: editingProduct.active !== false ? 1 : 0,
+                  };
+                  const res = await adminFetch("/api/products", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
                   const data = await res.json();
                   if (data.success) { await fetchAll(); setEditingProduct(null); showToast("✅ Product updated!"); }
                   else showToast("❌ " + (data.error||"Error"));
@@ -1167,7 +1177,22 @@ export default function AdminPage() {
               <div style={{ display:"flex", gap:"10px", marginTop:"24px" }}>
                 <button onClick={async () => {
                   const { product_id, ...updates } = editingVariety;
-                  const res = await adminFetch("/api/varieties", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ ...updates, product_id }) });
+                  const images = updates.images ? (typeof updates.images === "string" ? updates.images : JSON.stringify(updates.images)) : null;
+                  const payload = {
+                    id: updates.id,
+                    product_id,
+                    name: updates.name||null,
+                    origin: updates.origin||null,
+                    grade: updates.grade||null,
+                    min_order: updates.min_order||null,
+                    moisture: updates.moisture||null,
+                    packing: updates.packing||null,
+                    image: updates.image||null,
+                    images,
+                    video: updates.video||null,
+                    description: updates.description||null,
+                  };
+                  const res = await adminFetch("/api/varieties", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
                   const data = await res.json();
                   if (data.success) { await fetchAll(); setEditingVariety(null); showToast("✅ Variety updated!"); }
                   else showToast("❌ " + (data.error||"Error"));

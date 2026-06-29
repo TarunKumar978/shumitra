@@ -42,8 +42,15 @@ export async function PATCH(req: NextRequest) {
     if (updates.images && Array.isArray(updates.images)) {
       updates.images = JSON.stringify(updates.images);
     }
-    const fields = Object.keys(updates).map(k => `\`${k}\` = ?`).join(", ");
-    await db.query(`UPDATE varieties SET ${fields} WHERE id = ? AND product_id = ?`, [...Object.values(updates), id, product_id]);
+    // Map camelCase to snake_case column names
+    const colMap: Record<string,string> = { minOrder:"min_order", productId:"product_id" };
+    const values: any[] = [];
+    const fields = Object.keys(updates).map(k => {
+      values.push(updates[k]);
+      const col = colMap[k] || k;
+      return `\`${col}\` = ?`;
+    }).join(", ");
+    await db.query(`UPDATE varieties SET ${fields} WHERE id = ? AND product_id = ?`, [...values, id, product_id]);
     return NextResponse.json({ success: true });
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status:500 }); }
 }
