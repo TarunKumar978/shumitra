@@ -19,8 +19,6 @@ export async function POST(req: NextRequest) {
 
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  console.log("📧 SMTP_USER:", smtpUser);
-  console.log("📧 SMTP_PASS length:", smtpPass?.length);
 
   try {
     const transporter = nodemailer.createTransport({
