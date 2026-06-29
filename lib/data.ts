@@ -39,7 +39,7 @@ export const products: Product[] = [
     originRegions: ["Erode", "Salem", "Assam", "Nizamabad"],
     varieties: [
       {
-        id: "erode-turmeric",
+        id: "turmeric-erode-finger",
         name: "Erode Finger",
         origin: "Erode, Tamil Nadu",
         grade: "Premium Export",
@@ -58,7 +58,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "salem-turmeric",
+        id: "turmeric-salem-finger",
         name: "Salem Finger",
         origin: "Salem, Tamil Nadu",
         grade: "A Grade Export",
@@ -105,7 +105,7 @@ export const products: Product[] = [
     originRegions: ["Guntur", "Byadagi", "Warangal"],
     varieties: [
       {
-        id: "teja-s17",
+        id: "chilli-teja",
         name: "Teja (S17)",
         origin: "Guntur, Andhra Pradesh",
         grade: "Export Grade",
@@ -122,7 +122,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "byadagi",
+        id: "chilli-byadagi",
         name: "Byadagi",
         origin: "Byadagi, Karnataka",
         grade: "Premium Colour Grade",
@@ -139,7 +139,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "guntur-sannam",
+        id: "chilli-guntur-sannam",
         name: "Guntur Sannam",
         origin: "Guntur, Andhra Pradesh",
         grade: "ASTA 60+ Export",
@@ -169,7 +169,7 @@ export const products: Product[] = [
     originRegions: ["Unjha", "Jodhpur", "Jamnagar"],
     varieties: [
       {
-        id: "bold-cumin",
+        id: "cumin-bold",
         name: "Bold Grade Cumin",
         origin: "Unjha, Gujarat",
         grade: "Singapore Grade / Bold",
@@ -186,7 +186,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "european-cumin",
+        id: "cumin-european",
         name: "European Grade Cumin",
         origin: "Rajasthan / MP",
         grade: "European Export",
@@ -216,7 +216,7 @@ export const products: Product[] = [
     originRegions: ["Ramganj Mandi", "Kota", "Rajkot"],
     varieties: [
       {
-        id: "eagle-coriander",
+        id: "coriander-eagle",
         name: "Eagle Grade",
         origin: "Rajasthan",
         grade: "Eagle (Premium Export)",
@@ -233,7 +233,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "scooter-coriander",
+        id: "coriander-scooter",
         name: "Scooter Grade",
         origin: "Rajasthan / Gujarat",
         grade: "Scooter (Standard Export)",
@@ -263,7 +263,7 @@ export const products: Product[] = [
     originRegions: ["Wayanad", "Tellicherry", "Malabar"],
     varieties: [
       {
-        id: "malabar-pepper",
+        id: "pepper-malabar",
         name: "Malabar Garbled",
         origin: "Wayanad, Kerala",
         grade: "FAQ / Garbled",
@@ -281,7 +281,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "tellicherry-bold",
+        id: "pepper-tellicherry",
         name: "Tellicherry Bold 5mm+",
         origin: "Thalassery, Kerala",
         grade: "TGSEB Premium",
@@ -361,7 +361,7 @@ export const products: Product[] = [
     originRegions: ["Kerala", "Zanzibar", "Sri Lanka", "Vietnam", "Rajasthan"],
     varieties: [
       {
-        id: "clove",
+        id: "clove-whole",
         name: "Clove",
         origin: "Zanzibar & Madagascar",
         grade: "Lalpari / Hand-picked",
@@ -377,7 +377,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "cinnamon",
+        id: "cinnamon-sticks",
         name: "Cinnamon",
         origin: "Sri Lanka (Ceylon) & Vietnam",
         grade: "Alba / C4 / C5",
@@ -424,7 +424,7 @@ export const products: Product[] = [
     originRegions: ["Chikmagalur", "Coorg", "Wayanad", "Araku"],
     varieties: [
       {
-        id: "arabica",
+        id: "coffee-arabica",
         name: "Arabica AA/AB",
         origin: "Chikmagalur & Coorg, Karnataka",
         grade: "AA / AB Screen",
@@ -440,7 +440,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "robusta",
+        id: "coffee-robusta",
         name: "Robusta PB/AB",
         origin: "Wayanad, Kerala & Araku Valley",
         grade: "PB / AB Screen",
@@ -470,7 +470,7 @@ export const products: Product[] = [
     originRegions: ["Punjab", "Haryana", "Andhra Pradesh", "Maharashtra"],
     varieties: [
       {
-        id: "basmati-1121",
+        id: "rice-basmati",
         name: "Basmati 1121",
         origin: "Punjab / Haryana",
         grade: "Premium Aged Export",
@@ -487,7 +487,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "sona-masoori",
+        id: "rice-sona-masoori",
         name: "Sona Masoori",
         origin: "Andhra Pradesh / Karnataka",
         grade: "Sortex Export",
@@ -533,7 +533,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "chickpeas",
+        id: "kabuli-chana",
         name: "Kabuli Chickpeas",
         origin: "Rajasthan & MP",
         grade: "8–10mm Bold",
@@ -563,7 +563,7 @@ export const products: Product[] = [
     originRegions: ["Junagadh", "Rajkot", "Saurashtra"],
     varieties: [
       {
-        id: "java-hps",
+        id: "groundnut-java",
         name: "Java HPS Bold",
         origin: "Saurashtra, Gujarat",
         grade: "HPS (Hand Picked Selected)",
@@ -594,7 +594,7 @@ export const products: Product[] = [
     originRegions: ["Gujarat", "Rajasthan", "MP"],
     varieties: [
       {
-        id: "natural-sesame-99",
+        id: "sesame-natural-white",
         name: "Natural White 99/1",
         origin: "Gujarat / Rajasthan",
         grade: "99/1 Export Grade",
@@ -611,7 +611,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "black-sesame",
+        id: "sesame-black",
         name: "Black Sesame",
         origin: "Madhya Pradesh",
         grade: "Export Grade",
@@ -641,7 +641,7 @@ export const products: Product[] = [
     originRegions: ["Khewra", "Punjab Pakistan mines"],
     varieties: [
       {
-        id: "food-grade-salt",
+        id: "salt-food-fine",
         name: "Food Grade Salt",
         origin: "Himalayan mines",
         grade: "Fine / Coarse / X-Coarse",
@@ -658,7 +658,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "spa-bath-salt",
+        id: "salt-spa-coarse",
         name: "Spa & Bath Grade",
         origin: "Himalayan mines",
         grade: "Coarse Crystals",

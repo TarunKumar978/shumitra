@@ -1188,7 +1188,7 @@ export default function AdminPage() {
                     moisture: updates.moisture||null,
                     packing: updates.packing||null,
                     image: updates.image||null,
-                    images,
+                    images: images||null,
                     video: updates.video||null,
                     description: updates.description||null,
                   };

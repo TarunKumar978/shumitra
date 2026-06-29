@@ -46,7 +46,8 @@ export async function PATCH(req: NextRequest) {
     const colMap: Record<string,string> = { minOrder:"min_order", productId:"product_id" };
     const values: any[] = [];
     const fields = Object.keys(updates).map(k => {
-      values.push(updates[k]);
+      const val = updates[k];
+      values.push(val === "" ? null : val);
       const col = colMap[k] || k;
       return `\`${col}\` = ?`;
     }).join(", ");

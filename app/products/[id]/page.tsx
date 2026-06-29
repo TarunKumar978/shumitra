@@ -22,13 +22,32 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
   useEffect(() => {
     const staticP = staticProducts.find(p => p.id === id);
-    if (staticP) { setProduct(staticP); return; }
     fetch("/api/products").then(r=>r.json()).then(d=>{
       const dbP = (d.data||[]).find((p:any)=>p.id===id);
       if (dbP) {
-        setProduct({ id:dbP.id, name:dbP.name, emoji:dbP.emoji||"🌿", category:dbP.category, tagline:dbP.tagline||"", description:dbP.description||"", heroColor:dbP.hero_color||gold, hero_image:dbP.hero_image||"", certifications:[], varieties:(dbP.varieties||[]).map((v:any)=>({...v,minOrder:v.min_order})) });
-      } else setNotFound(true);
-    }).catch(()=>setNotFound(true));
+        // Merge: use DB varieties (which have latest images/videos) over static
+        const dbVarieties = (dbP.varieties||[]).map((v:any)=>({...v, minOrder:v.min_order}));
+        if (staticP) {
+          // Merge DB variety data (images/videos) into static varieties
+          const mergedVarieties = staticP.varieties.map((sv:any) => {
+            const dbV = dbVarieties.find((dv:any) => dv.id === sv.id);
+            return dbV ? { ...sv, ...dbV } : sv;
+          });
+          // Add any new varieties from DB not in static
+          const newVarieties = dbVarieties.filter((dv:any) => !staticP.varieties.find((sv:any) => sv.id === dv.id));
+          setProduct({ ...staticP, varieties: [...mergedVarieties, ...newVarieties] });
+        } else {
+          setProduct({ id:dbP.id, name:dbP.name, emoji:dbP.emoji||"🌿", category:dbP.category, tagline:dbP.tagline||"", description:dbP.description||"", heroColor:dbP.hero_color||gold, hero_image:dbP.hero_image||"", certifications:[], varieties:dbVarieties });
+        }
+      } else if (staticP) {
+        setProduct(staticP);
+      } else {
+        setNotFound(true);
+      }
+    }).catch(()=>{
+      if (staticP) setProduct(staticP);
+      else setNotFound(true);
+    });
   }, [id]);
 
   if (notFound) return (
