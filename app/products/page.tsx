@@ -29,12 +29,17 @@ export default function ProductsPage() {
   const [cat, setCat] = useState<"all"|"spices"|"commodities">("all");
   const [quoteModal, setQuoteModal] = useState<{open:boolean;productId:string}>({open:false,productId:""});
   const [dbProducts, setDbProducts] = useState<any[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/products").then(r=>r.json()).then(d=>{ if(d.data) setDbProducts(d.data); }).catch(()=>{});
+    fetch("/api/hidden-products").then(r=>r.json()).then(d=>{ if(d.data) setHiddenIds(d.data); }).catch(()=>{});
   }, []);
 
-  const products = useMemo(() => [...staticProducts, ...dbProducts.map((p:any) => ({ id:p.id, name:p.name, emoji:p.emoji||"🌿", category:p.category as "spices"|"commodities", tagline:p.tagline||"", description:p.description||"", heroColor:p.hero_color||"#C4930A", certifications:[], varieties:(p.varieties||[]).map((v:any)=>({ id:v.id, name:v.name, origin:v.origin||"", grade:v.grade||"", minOrder:v.min_order||"", description:v.description||"" })) }))], [dbProducts]);
+  const products = useMemo(() => {
+    const all = [...staticProducts, ...dbProducts.map((p:any) => ({ id:p.id, name:p.name, emoji:p.emoji||"🌿", category:p.category as "spices"|"commodities", tagline:p.tagline||"", description:p.description||"", heroColor:p.hero_color||"#C4930A", certifications:[], varieties:(p.varieties||[]).map((v:any)=>({ id:v.id, name:v.name, origin:v.origin||"", grade:v.grade||"", minOrder:v.min_order||"", description:v.description||"" })) }))];
+    return all.filter(p => !hiddenIds.includes(p.id));
+  }, [dbProducts, hiddenIds]);
 
   const filtered = products.filter(p => {
     const matchCat = cat === "all" || p.category === cat;

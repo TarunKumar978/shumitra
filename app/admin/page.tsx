@@ -69,6 +69,9 @@ export default function AdminPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(false);
   const [hidden, setHidden] = useState<string[]>([]);
+  useEffect(() => {
+    fetch("/api/hidden-products").then(r=>r.json()).then(d=>{ if(d.data) setHidden(d.data); }).catch(()=>{});
+  }, []);
   const [addingVariety, setAddingVariety] = useState<string|null>(null);
   const [newVariety, setNewVariety] = useState<any>({});
   const [editingVariety, setEditingVariety] = useState<any>(null);
@@ -641,10 +644,30 @@ export default function AdminPage() {
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => setHidden(h => h.includes(product.id) ? h.filter(x => x !== product.id) : [...h, product.id])}
-                      style={{ padding:"8px 16px", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.12)", background:"white", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"rgba(13,27,42,0.6)", display:"flex", alignItems:"center", gap:"6px" }}>
-                      {hidden.includes(product.id) ? <><Eye size={14}/> Show</> : <><EyeOff size={14}/> Hide</>}
-                    </button>
+                    <div style={{ display:"flex", gap:"8px" }}>
+                      <button onClick={async () => {
+                        const isHidden = hidden.includes(product.id);
+                        if (isHidden) {
+                          await adminFetch("/api/hidden-products", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
+                          setHidden(h => h.filter(x => x !== product.id));
+                          showToast("✅ Now visible on site!");
+                        } else {
+                          await adminFetch("/api/hidden-products", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
+                          setHidden(h => [...h, product.id]);
+                          showToast("Hidden from site");
+                        }
+                      }} style={{ padding:"8px 16px", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.12)", background:"white", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"rgba(13,27,42,0.6)", display:"flex", alignItems:"center", gap:"6px" }}>
+                        {hidden.includes(product.id) ? <><Eye size={14}/> Show</> : <><EyeOff size={14}/> Hide</>}
+                      </button>
+                      <button onClick={async () => {
+                        if (!confirm(`Permanently hide "${product.name}" from the website? This cannot be undone from this panel.`)) return;
+                        await adminFetch("/api/hidden-products", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
+                        setHidden(h => [...h, product.id]);
+                        showToast("🗑️ Removed from site");
+                      }} style={{ padding:"8px 12px", borderRadius:"10px", border:"1px solid rgba(239,68,68,0.2)", background:"white", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444", display:"flex", alignItems:"center", gap:"6px" }}>
+                        <Trash2 size={14}/> Delete
+                      </button>
+                    </div>
                   </div>
                   <div style={{ borderTop:"1px solid rgba(13,27,42,0.05)", padding:"16px 24px 20px" }}>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"12px" }}>
