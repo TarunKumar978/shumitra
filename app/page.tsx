@@ -164,14 +164,23 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const [dbProducts, setDbProducts] = useState<any[]>([]);
-  const [dbLoaded, setDbLoaded] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   useEffect(() => {
-    fetch("/api/products").then(r => r.json()).then(d => { if (d.data) setDbProducts(d.data); setDbLoaded(true); }).catch(() => setDbLoaded(true));
+    fetch("/api/products").then(r => r.json()).then(d => { if (d.data) setDbProducts(d.data); }).catch(() => {});
+    fetch("/api/hidden-products").then(r => r.json()).then(d => { if (d.data) setHiddenIds(d.data); }).catch(() => {});
   }, []);
+  const priorityOrder = ["turmeric","red-chilli","black-pepper","cardamom","areca-nut","dry-fruits-nuts","coriander","cumin"];
   const products = [
-    ...(!dbLoaded ? staticProducts : []),
+    ...staticProducts,
     ...dbProducts.map((p: any) => ({ id:p.id, name:p.name, emoji:p.emoji||"🌿", category:p.category as "spices"|"commodities", tagline:p.tagline||"", description:p.description||"", heroColor:p.hero_color||"#C4930A", certifications:[], varieties:(p.varieties||[]).map((v:any) => ({ id:v.id, name:v.name, origin:v.origin||"", grade:v.grade||"", minOrder:v.min_order||"", description:v.description||"" })) }))
-  ];
+  ].filter((p: any) => !hiddenIds.includes(p.id)).sort((a: any, b: any) => {
+    const ai = priorityOrder.indexOf(a.id);
+    const bi = priorityOrder.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
   const [slide, setSlide] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -274,7 +283,7 @@ export default function Home() {
             <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"clamp(28px,4vw,48px)", color:"#0D1B2A", margin:"0 0 10px" }}>Our Product Range</h2>
             <p style={{ color:"rgba(13,27,42,0.5)", fontSize:"14px", margin:0 }}>100+ products across 6 categories - sourced from origin, exported with precision</p>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: isMobile ? "12px" : "20px" }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(240px, 1fr))", gap: isMobile ? "12px" : "20px" }}>
             {products.map(product => {
               const dbP = dbProducts.find((p:any) => p.id === product.id);
               const photo = productPhotos[product.id] || { img: dbP?.hero_image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80", spec: product.tagline||"", origin: dbP?.description||"" };
@@ -314,7 +323,7 @@ export default function Home() {
             <p style={{ color:"#C4930A", fontSize:"11px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"10px" }}>Why Choose Us</p>
             <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"clamp(22px,3vw,36px)", color:"#0D1B2A", margin:0 }}>Built for Serious Buyers</h2>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: isMobile ? "12px" : "16px" }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(220px, 1fr))", gap: isMobile ? "12px" : "16px" }}>
             {[{ icon:"🌱", title:"Direct Sourcing", desc:"Straight from farms across 29 states. No middlemen, full traceability field-to-port." },{ icon:"📋", title:"Full Documentation", desc:"COA, phytosanitary, FSSAI, fumigation - all export paperwork handled end-to-end." },{ icon:"📦", title:"Custom Packaging", desc:"PP bags, jute, vacuum, retail packs. Private label and white-label ready." },{ icon:"🤝", title:"Personal Service", desc:"Direct access to our team. Real accountability on every single order." }].map((item, i) => (
               <div key={i} style={{ background:"white", border:"1px solid rgba(13,27,42,0.08)", borderRadius:"18px", padding: isMobile ? "16px" : "24px" }}>
                 <div style={{ fontSize: isMobile ? "24px" : "32px", marginBottom: isMobile ? "8px" : "14px" }}>{item.icon}</div>
@@ -356,7 +365,7 @@ export default function Home() {
             <p style={{ color:"#C4930A", fontSize:"11px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"10px" }}>How We Work</p>
             <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"clamp(24px,3.5vw,42px)", color:"#0D1B2A", margin:0 }}>From Enquiry to Delivery</h2>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "repeat(3,1fr)" : "repeat(5,1fr)", gap:"16px" }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "repeat(3,1fr)" : "repeat(auto-fit, minmax(140px, 1fr))", gap:"16px" }}>
             {[{ n:"01", t:"Inquiry", d:"Share product, quantity & destination" },{ n:"02", t:"Quote", d:"Pricing & specs within 24 hrs" },{ n:"03", t:"Sample", d:"Physical sample dispatched" },{ n:"04", t:"Order", d:"PO confirmed, QC begins" },{ n:"05", t:"Delivery", d:"FOB/CIF with full documentation" }].map((s, idx) => (
               <div key={s.n} style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
                 <div style={{ width: isMobile ? "44px" : "54px", height: isMobile ? "44px" : "54px", borderRadius:"14px", background:"#0D1B2A", color:"#E8A020", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"monospace", fontWeight:700, fontSize: isMobile ? "12px" : "14px", marginBottom:"12px", boxShadow:"0 6px 18px rgba(13,27,42,0.15)" }}>{s.n}</div>

@@ -69,8 +69,12 @@ export default function AdminPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(false);
   const [hidden, setHidden] = useState<string[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
   useEffect(() => {
-    fetch("/api/hidden-products").then(r=>r.json()).then(d=>{ if(d.data) setHidden(d.data); }).catch(()=>{});
+    fetch("/api/hidden-products").then(r=>r.json()).then(d=>{
+      if(d.data) setHidden(d.data);
+      if(d.rows) setDeletedIds(d.rows.filter((r:any)=>r.deleted).map((r:any)=>r.id));
+    }).catch(()=>{});
   }, []);
   const [addingVariety, setAddingVariety] = useState<string|null>(null);
   const [newVariety, setNewVariety] = useState<any>({});
@@ -589,12 +593,19 @@ export default function AdminPage() {
                                 { label:"Variety Name *", key:"name", placeholder:"e.g. Premium Grade" },
                                 { label:"Origin", key:"origin", placeholder:"e.g. Bihar" },
                                 { label:"Min. Order", key:"min_order", placeholder:"e.g. 10 kg" },
+                                { label:"Grade", key:"grade", placeholder:"e.g. Export Grade A" },
+                                { label:"Moisture %", key:"moisture", placeholder:"e.g. ≤ 10%" },
+                                { label:"Packing", key:"packing", placeholder:"e.g. PP Bags 25kg" },
                               ].map(f => (
                                 <div key={f.key}>
                                   <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>{f.label}</label>
                                   <input placeholder={f.placeholder} onChange={e => setNewVariety((v: any) => ({ ...v, [f.key]: e.target.value }))} style={inputStyle} />
                                 </div>
                               ))}
+                            </div>
+                            <div style={{ marginBottom:"12px" }}>
+                              <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>Description</label>
+                              <textarea placeholder="Describe this variety..." rows={2} onChange={e => setNewVariety((v: any) => ({ ...v, description: e.target.value }))} style={{ ...inputStyle, resize:"none" }} />
                             </div>
                             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"12px" }}>
                               <MediaUpload label="Product Image" accept="image/jpeg,image/png,image/webp" folder="products" onUpload={url => setNewVariety((v: any) => ({ ...v, image: url }))} type="image" />
@@ -603,7 +614,7 @@ export default function AdminPage() {
                             <div style={{ display:"flex", gap:"8px" }}>
                               <button onClick={async () => {
                                 if (!newVariety.name) return;
-                                const variety = { product_id: product.id, name: newVariety.name, image: newVariety.image||null, video: newVariety.video||null };
+                                const variety = { product_id: product.id, name: newVariety.name, origin: newVariety.origin||null, grade: newVariety.grade||null, min_order: newVariety.min_order||null, moisture: newVariety.moisture||null, packing: newVariety.packing||null, image: newVariety.image||null, video: newVariety.video||null, description: newVariety.description||null };
                                 const res = await adminFetch("/api/varieties", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(variety) });
                                 const data = await res.json();
                                 if (data.success) {
@@ -645,28 +656,35 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div style={{ display:"flex", gap:"8px" }}>
-                      <button onClick={async () => {
-                        const isHidden = hidden.includes(product.id);
-                        if (isHidden) {
-                          await adminFetch("/api/hidden-products", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
-                          setHidden(h => h.filter(x => x !== product.id));
-                          showToast("✅ Now visible on site!");
-                        } else {
-                          await adminFetch("/api/hidden-products", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
+                      {!deletedIds.includes(product.id) && (
+                        <button onClick={async () => {
+                          const isHidden = hidden.includes(product.id);
+                          if (isHidden) {
+                            await adminFetch("/api/hidden-products", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
+                            setHidden(h => h.filter(x => x !== product.id));
+                            showToast("✅ Now visible on site!");
+                          } else {
+                            await adminFetch("/api/hidden-products", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id, deleted: false }) });
+                            setHidden(h => [...h, product.id]);
+                            showToast("Hidden from site");
+                          }
+                        }} style={{ padding:"8px 16px", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.12)", background:"white", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"rgba(13,27,42,0.6)", display:"flex", alignItems:"center", gap:"6px" }}>
+                          {hidden.includes(product.id) ? <><Eye size={14}/> Show</> : <><EyeOff size={14}/> Hide</>}
+                        </button>
+                      )}
+                      {deletedIds.includes(product.id) ? (
+                        <span style={{ padding:"8px 12px", borderRadius:"10px", border:"1px solid rgba(239,68,68,0.2)", background:"rgba(239,68,68,0.06)", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Deleted</span>
+                      ) : (
+                        <button onClick={async () => {
+                          if (!confirm(`Permanently delete "${product.name}" from the website? This cannot be undone from this panel.`)) return;
+                          await adminFetch("/api/hidden-products", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id, deleted: true }) });
                           setHidden(h => [...h, product.id]);
-                          showToast("Hidden from site");
-                        }
-                      }} style={{ padding:"8px 16px", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.12)", background:"white", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"rgba(13,27,42,0.6)", display:"flex", alignItems:"center", gap:"6px" }}>
-                        {hidden.includes(product.id) ? <><Eye size={14}/> Show</> : <><EyeOff size={14}/> Hide</>}
-                      </button>
-                      <button onClick={async () => {
-                        if (!confirm(`Permanently hide "${product.name}" from the website? This cannot be undone from this panel.`)) return;
-                        await adminFetch("/api/hidden-products", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id: product.id }) });
-                        setHidden(h => [...h, product.id]);
-                        showToast("🗑️ Removed from site");
-                      }} style={{ padding:"8px 12px", borderRadius:"10px", border:"1px solid rgba(239,68,68,0.2)", background:"white", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444", display:"flex", alignItems:"center", gap:"6px" }}>
-                        <Trash2 size={14}/> Delete
-                      </button>
+                          setDeletedIds(d => [...d, product.id]);
+                          showToast("🗑️ Permanently deleted");
+                        }} style={{ padding:"8px 12px", borderRadius:"10px", border:"1px solid rgba(239,68,68,0.2)", background:"white", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444", display:"flex", alignItems:"center", gap:"6px" }}>
+                          <Trash2 size={14}/> Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div style={{ borderTop:"1px solid rgba(13,27,42,0.05)", padding:"16px 24px 20px" }}>

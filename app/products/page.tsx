@@ -36,9 +36,18 @@ export default function ProductsPage() {
     fetch("/api/hidden-products").then(r=>r.json()).then(d=>{ if(d.data) setHiddenIds(d.data); }).catch(()=>{});
   }, []);
 
+  const priorityOrder = ["turmeric","red-chilli","black-pepper","cardamom","areca-nut","dry-fruits-nuts","coriander","cumin"];
   const products = useMemo(() => {
     const all = [...staticProducts, ...dbProducts.map((p:any) => ({ id:p.id, name:p.name, emoji:p.emoji||"🌿", category:p.category as "spices"|"commodities", tagline:p.tagline||"", description:p.description||"", heroColor:p.hero_color||"#C4930A", certifications:[], varieties:(p.varieties||[]).map((v:any)=>({ id:v.id, name:v.name, origin:v.origin||"", grade:v.grade||"", minOrder:v.min_order||"", description:v.description||"" })) }))];
-    return all.filter(p => !hiddenIds.includes(p.id));
+    const filtered = all.filter(p => !hiddenIds.includes(p.id));
+    return filtered.sort((a, b) => {
+      const ai = priorityOrder.indexOf(a.id);
+      const bi = priorityOrder.indexOf(b.id);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
   }, [dbProducts, hiddenIds]);
 
   const filtered = products.filter(p => {
@@ -88,7 +97,7 @@ export default function ProductsPage() {
             <button onClick={()=>setSearch("")} style={{ marginTop:"16px", background:"#0D1B2A", color:"white", border:"none", padding:"12px 24px", borderRadius:"12px", cursor:"pointer", fontSize:"14px" }}>Clear search</button>
           </div>
         ) : (
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: isMobile ? "12px" : "20px" }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(240px, 1fr))", gap: isMobile ? "12px" : "20px" }}>
             {filtered.map(product => {
               const dbP = dbProducts.find((p:any)=>p.id===product.id);
               const photo = productPhotos[product.id] || { img:dbP?.hero_image||"https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80", spec:product.tagline||"", origin:product.description||"", color:product.heroColor||"#C4930A" };

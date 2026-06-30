@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import sharp from "sharp";
+
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,10 +13,28 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
 
-    const ext = file.name.split(".").pop();
-    const fileName = `${Date.now()}.${ext}`;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
+    let finalExt = ext;
+
+    // Compress images (not videos) — resize if oversized, re-encode at high quality
+    if (IMAGE_EXTENSIONS.has(ext) && folder !== "hero") {
+      try {
+        const img = sharp(buffer);
+        const meta = await img.metadata();
+        let pipeline = img;
+        if (meta.width && meta.width > 1600) {
+          pipeline = pipeline.resize({ width: 1600, withoutEnlargement: true });
+        }
+        buffer = Buffer.from(await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer());
+        finalExt = "jpg";
+      } catch {
+        // If compression fails for any reason, fall back to original file untouched
+      }
+    }
+
+    const fileName = `${Date.now()}.${finalExt}`;
 
     // Special case: hero video → save as /public/hero.mp4
     if (folder === "hero") {

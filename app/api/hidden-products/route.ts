@@ -20,17 +20,17 @@ function isAdminAuthed(req: Request): boolean {
 
 export async function GET() {
   try {
-    const [rows] = await db.query("SELECT id FROM hidden_products") as any[];
-    return NextResponse.json({ data: rows.map((r: any) => r.id) });
+    const [rows] = await db.query("SELECT id, deleted FROM hidden_products") as any[];
+    return NextResponse.json({ data: rows.map((r: any) => r.id), rows });
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status:500 }); }
 }
 
 export async function POST(req: NextRequest) {
   if (!isAdminAuthed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const { id } = await req.json();
+    const { id, deleted } = await req.json();
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-    await db.query("INSERT IGNORE INTO hidden_products (id) VALUES (?)", [id]);
+    await db.query("INSERT INTO hidden_products (id, deleted) VALUES (?, ?) ON DUPLICATE KEY UPDATE deleted = VALUES(deleted)", [id, deleted ? 1 : 0]);
     return NextResponse.json({ success: true });
   } catch (e: any) { return NextResponse.json({ error: e.message }, { status:500 }); }
 }
