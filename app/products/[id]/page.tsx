@@ -8,6 +8,37 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 
 const ink = "#0D1B2A";
 const gold = "#C4930A";
+
+function renderDescription(text: string, style: React.CSSProperties) {
+  const lines = text.split("\n");
+  return (
+    <div style={style}>
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        // Bullet point line
+        const isBullet = trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*") && !trimmed.startsWith("**");
+        // Parse bold **text**
+        const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
+        const rendered = parts.map((part, j) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return <strong key={j}>{part.slice(2, -2)}</strong>;
+          }
+          return <span key={j}>{part}</span>;
+        });
+        if (!trimmed) return <br key={i} />;
+        if (isBullet) {
+          return (
+            <div key={i} style={{ display:"flex", gap:"8px", marginBottom:"4px" }}>
+              <span style={{ color:"#C4930A", fontWeight:700, flexShrink:0 }}>•</span>
+              <span>{rendered}</span>
+            </div>
+          );
+        }
+        return <p key={i} style={{ margin:"0 0 6px" }}>{rendered}</p>;
+      })}
+    </div>
+  );
+}
 const goldLight = "#E8A020";
 const cream = "#F5F0E8";
 
@@ -18,6 +49,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [notFound, setNotFound] = useState(false);
   const [activeVariety, setActiveVariety] = useState(0);
   const [activeImg, setActiveImg] = useState<number>(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
 
   useEffect(() => {
@@ -92,7 +124,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <h1 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize: isMobile ? "clamp(26px,7vw,40px)" : "clamp(30px,4vw,50px)", color:ink, margin:"0 0 10px", lineHeight:1.1, fontWeight:400 }}>
                 {product.emoji} {product.name}
               </h1>
-              <p style={{ color:"rgba(13,27,42,0.55)", fontSize: isMobile ? "14px" : "16px", lineHeight:1.8, margin:"0 0 20px" }}>{product.description||product.tagline}</p>
+              {renderDescription(product.description||product.tagline||"", { color:"rgba(13,27,42,0.55)", fontSize: isMobile ? "14px" : "16px", lineHeight:1.8, marginBottom:"20px" })}
               <div style={{ display:"flex", gap:"10px", flexWrap:"wrap" }}>
                 <button onClick={()=>setQuoteOpen(true)} style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"12px 22px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"14px", boxShadow:"0 6px 20px rgba(196,147,10,0.3)" }}>Get Quote <ArrowRight size={15} /></button>
                 <Link href="/products" style={{ display:"inline-flex", alignItems:"center", gap:"8px", color:ink, fontWeight:600, padding:"12px 18px", borderRadius:"12px", textDecoration:"none", fontSize:"14px", border:"1px solid rgba(13,27,42,0.15)" }}><ArrowLeft size={15} /> All Products</Link>
@@ -130,7 +162,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 {imgs.length > 0 && (
                   <div style={{ background:"white", borderRadius:"18px", border:"1px solid rgba(13,27,42,0.07)", overflow:"hidden" }}>
                     <div style={{ background:"#fafaf8", display:"flex", alignItems:"center", justifyContent:"center", padding:"20px", minHeight: isMobile ? "220px" : "300px" }}>
-                      <img src={imgs[activeImg]||imgs[0]} alt={variety.name} style={{ maxWidth:"100%", maxHeight: isMobile ? "220px" : "380px", width:"auto", height:"auto", objectFit:"contain", borderRadius:"6px" }} />
+                      <img src={imgs[activeImg]||imgs[0]} alt={variety.name} onClick={() => setLightboxOpen(true)} style={{ maxWidth:"100%", maxHeight: isMobile ? "220px" : "380px", width:"auto", height:"auto", objectFit:"contain", borderRadius:"6px", cursor:"zoom-in" }} />
+                      {lightboxOpen && (
+                        <div onClick={() => setLightboxOpen(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }}>
+                          <button onClick={() => setLightboxOpen(false)} style={{ position:"absolute", top:"20px", right:"24px", background:"none", border:"none", color:"white", fontSize:"32px", cursor:"pointer", lineHeight:1 }}>×</button>
+                          <img src={imgs[activeImg]||imgs[0]} alt={variety.name} style={{ maxWidth:"90vw", maxHeight:"90vh", objectFit:"contain", borderRadius:"8px" }} />
+                        </div>
+                      )}
                     </div>
                     {imgs.length > 1 && (
                       <div style={{ display:"flex", gap:"8px", padding:"12px 16px", borderTop:"1px solid rgba(13,27,42,0.06)", overflowX:"auto" }}>
@@ -155,7 +193,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </div>
                   )}
                   {variety.description && (
-                    <p style={{ color:"rgba(13,27,42,0.55)", lineHeight:1.9, fontSize: isMobile ? "13px" : "15px", marginBottom:"18px", paddingBottom:"18px", borderBottom:"1px solid rgba(13,27,42,0.06)" }}>{variety.description}</p>
+                    <div style={{ color:"rgba(13,27,42,0.55)", lineHeight:1.9, fontSize: isMobile ? "13px" : "15px", marginBottom:"18px", paddingBottom:"18px", borderBottom:"1px solid rgba(13,27,42,0.06)" }}>
+                      {renderDescription(variety.description, { color:"rgba(13,27,42,0.55)", lineHeight:1.9, fontSize: isMobile ? "13px" : "15px" })}
+                    </div>
                   )}
                   <button onClick={()=>setQuoteOpen(true)} style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:`linear-gradient(135deg,${gold},${goldLight})`, color:"white", fontWeight:700, padding:"12px 22px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"14px", boxShadow:"0 4px 16px rgba(196,147,10,0.25)" }}>
                     Request Quote for {variety.name} <ArrowRight size={15} />

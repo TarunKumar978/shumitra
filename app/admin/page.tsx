@@ -452,11 +452,7 @@ export default function AdminPage() {
                   <p style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"20px", color:ink, margin:0, fontWeight:400 }}>Add New Product</p>
                   <button onClick={() => setAddingProduct(false)} style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(13,27,42,0.4)" }}><X size={18}/></button>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"80px 1fr 1fr", gap:"12px", marginBottom:"12px" }}>
-                  <div>
-                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>Emoji</label>
-                    <input value={newProduct.emoji} onChange={e => setNewProduct(p => ({ ...p, emoji:e.target.value }))} style={{ ...inputStyle, textAlign:"center", fontSize:"24px" }} />
-                  </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"12px" }}>
                   <div>
                     <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px" }}>Product Name *</label>
                     <input placeholder="e.g. Fenugreek Seeds" value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name:e.target.value }))} style={inputStyle} />
@@ -1082,12 +1078,7 @@ export default function AdminPage() {
             <div style={{ background:"white", borderRadius:"24px", padding:"32px", width:"580px", maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto" as const }}>
               <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"24px", color:"#0D1B2A", margin:"0 0 24px", fontWeight:400 }}>Edit Product</h2>
               <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"80px 1fr", gap:"12px" }}>
-                  <div>
-                    <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Emoji</label>
-                    <input value={editingProduct.emoji||""} onChange={e => setEditingProduct((p: any) => ({ ...p, emoji: e.target.value }))}
-                      style={{ width:"100%", padding:"10px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"22px", textAlign:"center", outline:"none", boxSizing:"border-box" as const }} />
-                  </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:"12px" }}>
                   <div>
                     <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Name</label>
                     <input value={editingProduct.name||""} onChange={e => setEditingProduct((p: any) => ({ ...p, name: e.target.value }))}
