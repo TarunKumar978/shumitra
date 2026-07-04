@@ -1,12 +1,19 @@
 "use client";
 import Link from "next/link";
-import { products } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useState, useEffect } from "react";
 
 export default function Footer() {
   const isMobile = useIsMobile();
-  const spices = products.filter(p => p.category === "spices");
-  const commodities = products.filter(p => p.category === "commodities");
+  const [spices, setSpices] = useState<any[]>([]);
+  const [commodities, setCommodities] = useState<any[]>([]);
+  useEffect(() => {
+    fetch("/api/products").then(r=>r.json()).then(d=>{
+      const all = d.data||[];
+      setSpices(all.filter((p:any) => p.category === "spices"));
+      setCommodities(all.filter((p:any) => p.category === "commodities"));
+    }).catch(()=>{});
+  }, []);
 
   return (
     <footer style={{ background:"#080F1A", color:"white", position:"relative", overflow:"hidden" }}>

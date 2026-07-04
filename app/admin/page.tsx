@@ -1158,8 +1158,46 @@ export default function AdminPage() {
                 ))}
                 <div style={{ gridColumn:"1/-1" }}>
                   <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Description</label>
-                  <textarea value={editingVariety.description||""} onChange={e => setEditingVariety((v: any) => ({ ...v, description: e.target.value }))} rows={2}
-                    style={{ width:"100%", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const, resize:"none" as const }} />
+                  <div
+                    contentEditable
+                    suppressContentEditableWarning
+                    onPaste={e => {
+                      e.preventDefault();
+                      const html = e.clipboardData.getData("text/html");
+                      const text = e.clipboardData.getData("text/plain");
+                      let result = "";
+                      if (html) {
+                        const div = document.createElement("div");
+                        div.innerHTML = html;
+                        const convert = (node: Node): string => {
+                          if (node.nodeType === 3) return node.textContent||"";
+                          const el = node as HTMLElement;
+                          const tag = el.tagName?.toLowerCase();
+                          const children = Array.from(el.childNodes).map(convert).join("");
+                          if (tag === "b" || tag === "strong") return "**" + children + "**";
+                          if (tag === "li") return "• " + children + "\n";
+                          if (tag === "br") return "\n";
+                          if (["p","div","h1","h2","h3","h4","ul","ol"].includes(tag||"")) return children + "\n";
+                          return children;
+                        };
+                        result = convert(div).trim();
+                      } else {
+                        result = text;
+                      }
+                      setEditingVariety((v: any) => ({ ...v, description: result }));
+                      setTimeout(() => {
+                        const el = document.getElementById("edit-variety-desc-rich");
+                        if (el) el.innerText = result;
+                      }, 0);
+                    }}
+                    onInput={e => {
+                      const el = e.currentTarget;
+                      setEditingVariety((v: any) => ({ ...v, description: el.innerText }));
+                    }}
+                    id="edit-variety-desc-rich"
+                    style={{ width:"100%", minHeight:"100px", padding:"10px 14px", border:"1px solid rgba(13,27,42,0.15)", borderRadius:"10px", fontSize:"13px", color:"#0D1B2A", outline:"none", boxSizing:"border-box" as const, whiteSpace:"pre-wrap" as const, lineHeight:1.7, background:"white" }}
+                  >{editingVariety.description||""}</div>
+                  <p style={{ fontSize:"11px", color:"rgba(13,27,42,0.35)", margin:"4px 0 0" }}>Paste directly from ChatGPT — bold and bullets auto-convert. Type ** around words for bold, • for bullets.</p>
                 </div>
                 <div style={{ gridColumn:"1/-1" }}>
                   <label style={{ fontSize:"11px", fontWeight:700, color:"rgba(13,27,42,0.5)", display:"block", marginBottom:"8px", textTransform:"uppercase" }}>Product Images</label>
