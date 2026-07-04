@@ -17,8 +17,10 @@ function renderDescription(text: string, style: React.CSSProperties) {
         const trimmed = line.trim();
         // Bullet point line
         const isBullet = trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*") && !trimmed.startsWith("**");
+        // Strip leading bullet character for display
+        const displayText = isBullet ? trimmed.replace(/^[•\-\*]\s*/, "") : trimmed;
         // Parse bold **text**
-        const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
+        const parts = displayText.split(/(\*\*[^*]+\*\*)/g);
         const rendered = parts.map((part, j) => {
           if (part.startsWith("**") && part.endsWith("**")) {
             return <strong key={j}>{part.slice(2, -2)}</strong>;
