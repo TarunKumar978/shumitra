@@ -1174,7 +1174,7 @@ export default function AdminPage() {
                           const el = node as HTMLElement;
                           const tag = el.tagName?.toLowerCase();
                           const children = Array.from(el.childNodes).map(convert).join("");
-                          if (tag === "b" || tag === "strong") return "**" + children + "**";
+                          if (tag === "b" || tag === "strong" || tag === "em" || tag === "i") return "**" + children + "**";
                           if (tag === "li") return "• " + children.replace(/^[•\-\*]\s*/, "") + "\n";
                           if (tag === "br") return "\n";
                           if (["p","div","h1","h2","h3","h4","ul","ol"].includes(tag||"")) return children.trimEnd() + "\n";

@@ -15,16 +15,16 @@ function renderDescription(text: string, style: React.CSSProperties) {
     <div style={style}>
       {lines.map((line, i) => {
         const trimmed = line.trim();
-        // Bullet point line
-        const isBullet = trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*") && !trimmed.startsWith("**");
-        // Strip leading bullet character for display
-        const displayText = isBullet ? trimmed.replace(/^[•\-\*]\s*/, "") : trimmed;
-        // Parse bold **text**
-        const parts = displayText.split(/(\*\*[^*]+\*\*)/g);
+        // Detect bullet — •, -, *, numbered list
+        const isBullet = /^[•\-\*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed);
+        // Strip leading bullet/number
+        const displayText = isBullet ? trimmed.replace(/^([•\-\*]|\d+\.)\s*/, "") : trimmed;
+        // Parse bold: **text**, *text*, __text__
+        const parts = displayText.split(/(\*\*[^*]+\*\*|\*[^*]+\*|__[^_]+__)/g);
         const rendered = parts.map((part, j) => {
-          if (part.startsWith("**") && part.endsWith("**")) {
-            return <strong key={j}>{part.slice(2, -2)}</strong>;
-          }
+          if (part.startsWith("**") && part.endsWith("**")) return <strong key={j}>{part.slice(2,-2)}</strong>;
+          if (part.startsWith("*") && part.endsWith("*")) return <strong key={j}>{part.slice(1,-1)}</strong>;
+          if (part.startsWith("__") && part.endsWith("__")) return <strong key={j}>{part.slice(2,-2)}</strong>;
           return <span key={j}>{part}</span>;
         });
         if (!trimmed) return <br key={i} />;
