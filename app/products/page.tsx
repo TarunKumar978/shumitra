@@ -121,7 +121,7 @@ export default function ProductsPage() {
                     <span style={{ display:"inline-block", fontSize: isMobile ? "9px" : "11px", background:`${photo?.color}12`, border:`1px solid ${photo?.color}30`, color:photo?.color, borderRadius:"6px", padding:"2px 8px", fontWeight:700, marginBottom: isMobile ? "8px" : "10px" }}>{photo?.spec}</span>
                     {!isMobile && (
                       <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"12px", flex:1 }}>
-                        {product.varieties.slice(0,3).map((v:any)=>(<span key={v.id} style={{ fontSize:"10px", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.08)", color:"rgba(13,27,42,0.5)", borderRadius:"6px", padding:"2px 8px" }}>{v.name.split(" ").slice(0,2).join(" ")}</span>))}
+                        {(() => { const shown = product.varieties.slice(0,3).filter((_:any,i:number) => i===0 || product.varieties[i].name.length < 15); const extra = product.varieties.length - shown.length; return (<>{shown.map((v:any) => (<span key={v.id} style={{ fontSize:"10px", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.08)", color:"rgba(13,27,42,0.5)", borderRadius:"6px", padding:"2px 8px", whiteSpace:"nowrap" as const }}>{v.name.length > 12 ? v.name.split(" ")[0] : v.name}</span>))}{extra > 0 && <span style={{ fontSize:"10px", color:"#C4930A", fontWeight:700 }}>+{extra}</span>}</>); })()}
                         {product.varieties.length>3 && <span style={{ fontSize:"10px", color:"#C4930A", fontWeight:700 }}>+{product.varieties.length-3}</span>}
                       </div>
                     )}

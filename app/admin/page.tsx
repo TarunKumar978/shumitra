@@ -529,7 +529,7 @@ export default function AdminPage() {
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px" }}>
                         <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
                           {product.hero_image && <img src={product.hero_image} alt="" style={{ width:"48px", height:"48px", borderRadius:"10px", objectFit:"cover" }} onError={e => (e.currentTarget.style.display="none")} />}
-                          <span style={{ fontSize:"28px" }}>{product.emoji}</span>
+                          
                           <div>
                             <p style={{ fontWeight:700, color:"#0D1B2A", fontSize:"15px", margin:"0 0 4px" }}>{product.name}</p>
                             <div style={{ display:"flex", gap:"8px" }}>
@@ -642,7 +642,7 @@ export default function AdminPage() {
                 <div key={product.id} style={{ background:"white", borderRadius:"20px", border:"1px solid rgba(13,27,42,0.07)", overflow:"hidden", opacity: hidden.includes(product.id) ? 0.5 : 1 }}>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"20px 24px" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
-                      <span style={{ fontSize:"32px" }}>{product.emoji}</span>
+                      
                       <div>
                         <p style={{ fontWeight:700, color:ink, fontSize:"15px", margin:"0 0 4px" }}>{product.name}</p>
                         <div style={{ display:"flex", gap:"8px" }}>
@@ -1184,10 +1184,11 @@ export default function AdminPage() {
                       } else {
                         result = text;
                       }
-                      setEditingVariety((v: any) => ({ ...v, description: result }));
+                      const cleaned = result.replace(/\n{3,}/g, "\n\n").replace(/\n{2,}/g, "\n").trim();
+                      setEditingVariety((v: any) => ({ ...v, description: cleaned }));
                       setTimeout(() => {
                         const el = document.getElementById("edit-variety-desc-rich");
-                        if (el) el.innerText = result;
+                        if (el) el.innerText = cleaned;
                       }, 0);
                     }}
                     onInput={e => {
