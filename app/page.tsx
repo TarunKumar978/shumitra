@@ -245,12 +245,9 @@ export default function Home() {
               ))}
             </div>
             {!isMobile && (
-              <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
-                {activeSlides.map((s: any, i: number) => (
-                  <button key={i} onClick={() => goToSlide(i)} style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:"4px", background:"rgba(0,0,0,0.35)", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"10px", padding:"8px 14px", cursor:"pointer", minWidth:"80px", transition:"all 0.3s", opacity: i === slide ? 1 : 0.55 }}>
-                    <span style={{ color:"white", fontSize:"11px", fontWeight: i === slide ? 700 : 500, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:"90px" }}>{s.label||s.name}</span>
-                    <div style={{ width:"100%", height:"2px", background:"rgba(255,255,255,0.2)", borderRadius:"2px", overflow:"hidden" }}><div style={{ height:"100%", background:"#C4930A", borderRadius:"2px", width: i === slide ? "100%" : "0%", transition: i === slide ? "width 5s linear" : "none" }} /></div>
-                  </button>
+              <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+                {activeSlides.map((_: any, i: number) => (
+                  <button key={i} onClick={() => goToSlide(i)} style={{ width: i === slide ? "24px" : "8px", height:"8px", borderRadius:"4px", background: i === slide ? "#C4930A" : "rgba(255,255,255,0.4)", border:"none", cursor:"pointer", transition:"all 0.3s", padding:0 }} />
                 ))}
               </div>
             )}
@@ -301,7 +298,7 @@ export default function Home() {
                       <p style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize: isMobile ? "13px" : "17px", color:"#0D1B2A", margin:"0 0 4px", fontWeight:400, lineHeight:1.2 }}>{product.name}</p>
                       <span style={{ fontSize: isMobile ? "9px" : "10px", background:"rgba(196,147,10,0.1)", border:"1px solid rgba(196,147,10,0.25)", color:"#C4930A", borderRadius:"6px", padding:"2px 6px", fontWeight:600, display:"inline-block" }}>{photo?.spec}</span>
                     </div>
-                    {!isMobile && <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"14px", flex:1 }}>{(() => { const shown = product.varieties.slice(0,3).filter((_:any,i:number) => i===0 || product.varieties[i].name.length < 15); const extra = product.varieties.length - shown.length; return (<>{shown.map((v:any) => (<span key={v.id} style={{ fontSize:"9px", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.08)", color:"rgba(13,27,42,0.5)", borderRadius:"6px", padding:"2px 7px", whiteSpace:"nowrap" as const }}>{v.name.length > 12 ? v.name.split(" ")[0] : v.name}</span>))}{extra > 0 && <span style={{ fontSize:"9px", color:"#C4930A", fontWeight:700 }}>+{extra}</span>}</>); })()}</div>}
+                    {!isMobile && <div style={{ display:"flex", gap:"4px", flexWrap:"wrap", marginBottom:"14px", flex:1, alignContent:"flex-start" }}>{(() => { const tags = product.varieties.slice(0,4); const extra = product.varieties.length - tags.length; return (<>{tags.map((v:any) => { const label = v.name.split(" ")[0]; return (<span key={v.id} style={{ fontSize:"9px", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.08)", color:"rgba(13,27,42,0.5)", borderRadius:"6px", padding:"2px 7px", whiteSpace:"nowrap" as const, display:"inline-block" }}>{label}</span>); })}{extra > 0 && <span style={{ fontSize:"9px", color:"#C4930A", fontWeight:700 }}>+{extra}</span>}</>); })()}</div>}
                     <div style={{ display:"flex", gap: isMobile ? "4px" : "6px", marginTop:"auto" }}>
                       <Link href={`/products/${product.id}`} style={{ flex:1, display:"inline-flex", alignItems:"center", justifyContent:"center", gap:"4px", background:"#0D1B2A", color:"white", fontWeight:600, padding: isMobile ? "7px 0" : "9px 0", borderRadius:"8px", textDecoration:"none", fontSize: isMobile ? "10px" : "11px" }}>{isMobile ? "Specs" : "View Specs"} <ArrowRight size={isMobile ? 9 : 11} /></Link>
                       <button type="button" onClick={() => { setQuoteProduct(product.id); setQuoteOpen(true); }} style={{ flex:1, display:"inline-flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#C4930A,#E8A020)", color:"white", fontWeight:600, padding: isMobile ? "7px 0" : "9px 0", borderRadius:"8px", fontSize: isMobile ? "10px" : "11px", border:"none", cursor:"pointer" }}>Quote</button>
