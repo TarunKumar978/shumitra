@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { products as staticProducts, stats, countries } from "@/lib/data";
 import QuoteModal from "@/components/QuoteModal";
+import ExportMap from "@/components/ExportMap";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 function useInView() {
@@ -383,7 +384,7 @@ export default function Home() {
           </div>
           <div style={{ position:"relative", borderRadius:"20px", overflow:"hidden", boxShadow:"0 20px 60px rgba(13,27,42,0.15)", border:"1px solid rgba(13,27,42,0.1)", background:"#b8d8e8" }}>
             <div style={{ position:"relative" }}>
-              <div style={{ background:"#cde8f5" }}><img src="/worldmap.png" alt="World Map" style={{ width:"100%", display:"block", filter:"invert(1) sepia(1) saturate(2) hue-rotate(180deg) brightness(0.7)" }} /></div>
+              <ExportMap />
               <div style={{ position:"absolute", inset:0 }}>
                 <div style={{ position:"absolute", left:"67%", top:"47%", transform:"translate(-50%,-50%)" }}>
                   <div style={{ width:"20px", height:"20px", borderRadius:"50%", background:"rgba(196,147,10,0.3)", position:"absolute", top:"-4px", left:"-4px", animation:"ping 1.5s ease infinite" }}/>
