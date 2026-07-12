@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { products } from "@/lib/data";
 import QuoteModal from "@/components/QuoteModal";
 
 export default function Navbar() {
@@ -10,6 +9,8 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [spices, setSpices] = useState<any[]>([]);
+  const [commodities, setCommodities] = useState<any[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -24,10 +25,16 @@ export default function Navbar() {
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
+  useEffect(() => {
+    fetch("/api/products").then(r=>r.json()).then(d=>{
+      const all = d.data||[];
+      setSpices(all.filter((p:any) => p.category === "spices").slice(0,8));
+      setCommodities(all.filter((p:any) => p.category === "commodities").slice(0,8));
+    }).catch(()=>{});
+  }, []);
+
   const openMenu = () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); setMegaOpen(true); };
   const closeMenu = () => { timeoutRef.current = setTimeout(() => setMegaOpen(false), 150); };
-  const spices = products.filter(p => p.category === "spices");
-  const commodities = products.filter(p => p.category === "commodities");
 
   return (
     <>
@@ -68,11 +75,11 @@ export default function Navbar() {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"20px" }}>
                   <div>
                     <p style={{ color:"#C4930A", fontSize:"10px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"10px", paddingBottom:"8px", borderBottom:"1px solid rgba(13,27,42,0.08)" }}>Spices</p>
-                    {spices.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMegaOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"6px 0", textDecoration:"none" }} onMouseEnter={e => (e.currentTarget.style.color="#C4930A")} onMouseLeave={e => (e.currentTarget.style.color="rgba(13,27,42,0.65)")}><span style={{ fontSize:"15px" }}>{p.emoji}</span>{p.name}</Link>))}
+                    {spices.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMegaOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"6px 0", textDecoration:"none" }} onMouseEnter={e => (e.currentTarget.style.color="#C4930A")} onMouseLeave={e => (e.currentTarget.style.color="rgba(13,27,42,0.65)")}>{p.name}</Link>))}
                   </div>
                   <div>
                     <p style={{ color:"#C4930A", fontSize:"10px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"10px", paddingBottom:"8px", borderBottom:"1px solid rgba(13,27,42,0.08)" }}>Commodities</p>
-                    {commodities.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMegaOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"6px 0", textDecoration:"none" }} onMouseEnter={e => (e.currentTarget.style.color="#C4930A")} onMouseLeave={e => (e.currentTarget.style.color="rgba(13,27,42,0.65)")}><span style={{ fontSize:"15px" }}>{p.emoji}</span>{p.name}</Link>))}
+                    {commodities.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMegaOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"6px 0", textDecoration:"none" }} onMouseEnter={e => (e.currentTarget.style.color="#C4930A")} onMouseLeave={e => (e.currentTarget.style.color="rgba(13,27,42,0.65)")}>{p.name}</Link>))}
                   </div>
                 </div>
                 <div style={{ marginTop:"14px", paddingTop:"12px", borderTop:"1px solid rgba(13,27,42,0.08)" }}>
@@ -103,13 +110,13 @@ export default function Navbar() {
           <div style={{ marginTop:"28px", marginBottom:"8px" }}>
             <p style={{ color:"#C4930A", fontSize:"10px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"12px" }}>Spices</p>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px" }}>
-              {spices.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMenuOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"8px 12px", textDecoration:"none", background:"white", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.07)" }}><span>{p.emoji}</span>{p.name}</Link>))}
+              {spices.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMenuOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"8px 12px", textDecoration:"none", background:"white", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.07)" }}>{p.name}</Link>))}
             </div>
           </div>
           <div style={{ marginTop:"20px", marginBottom:"28px" }}>
             <p style={{ color:"#C4930A", fontSize:"10px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"12px" }}>Commodities</p>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px" }}>
-              {commodities.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMenuOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"8px 12px", textDecoration:"none", background:"white", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.07)" }}><span>{p.emoji}</span>{p.name}</Link>))}
+              {commodities.map(p => (<Link key={p.id} href={`/products/${p.id}`} onClick={() => setMenuOpen(false)} style={{ display:"flex", alignItems:"center", gap:"8px", color:"rgba(13,27,42,0.65)", fontSize:"13px", padding:"8px 12px", textDecoration:"none", background:"white", borderRadius:"10px", border:"1px solid rgba(13,27,42,0.07)" }}>{p.name}</Link>))}
             </div>
           </div>
           <button onClick={() => { setMenuOpen(false); setQuoteOpen(true); }} style={{ display:"block", width:"100%", background:"linear-gradient(135deg,#E8A020,#C4930A)", color:"white", fontWeight:700, textAlign:"center", padding:"16px", borderRadius:"12px", border:"none", cursor:"pointer", fontSize:"16px", marginBottom:"12px" }}>Get a Quote</button>

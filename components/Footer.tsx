@@ -10,8 +10,8 @@ export default function Footer() {
   useEffect(() => {
     fetch("/api/products").then(r=>r.json()).then(d=>{
       const all = d.data||[];
-      setSpices(all.filter((p:any) => p.category === "spices"));
-      setCommodities(all.filter((p:any) => p.category === "commodities"));
+      setSpices(all.filter((p:any) => p.category === "spices").slice(0,5));
+      setCommodities(all.filter((p:any) => p.category === "commodities").slice(0,5));
     }).catch(()=>{});
   }, []);
 

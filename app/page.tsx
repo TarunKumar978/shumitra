@@ -185,6 +185,7 @@ export default function Home() {
   const [animKey, setAnimKey] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteProduct, setQuoteProduct] = useState("");
+  const [showAllProducts, setShowAllProducts] = useState(false);
   const [dbHeroSlides, setDbHeroSlides] = useState<any[]>([]);
   useEffect(() => { fetch("/api/hero-slides").then(r=>r.json()).then(d=>{ if(d.data?.length) setDbHeroSlides(d.data); }).catch(()=>{}); }, []);
   const goToSlide = (i: number) => { setSlide(i); setAnimKey(k => k+1); };
@@ -281,7 +282,7 @@ export default function Home() {
             <p style={{ color:"rgba(13,27,42,0.5)", fontSize:"14px", margin:0 }}>100+ products across 6 categories - sourced from origin, exported with precision</p>
           </div>
           <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(240px, 1fr))", gap: isMobile ? "12px" : "20px" }}>
-            {products.map(product => {
+            {(showAllProducts ? products : products.slice(0,12)).map(product => {
               const dbP = dbProducts.find((p:any) => p.id === product.id);
               const photo = productPhotos[product.id] || { img: dbP?.hero_image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80", spec: product.tagline||"", origin: dbP?.description||"" };
               return (
@@ -309,7 +310,13 @@ export default function Home() {
             })}
           </div>
           <div style={{ textAlign:"center", marginTop:"40px" }}>
-            <Link href="/products" style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:"#0D1B2A", color:"white", fontWeight:700, padding:"14px 40px", borderRadius:"14px", textDecoration:"none", fontSize:"14px" }}>View Full Catalogue <ArrowRight size={15} /></Link>
+            {!showAllProducts && products.length > 12 ? (
+              <button onClick={() => setShowAllProducts(true)} style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:"#0D1B2A", color:"white", fontWeight:700, padding:"14px 40px", borderRadius:"14px", fontSize:"14px", border:"none", cursor:"pointer" }}>
+                Show More <ArrowRight size={15} />
+              </button>
+            ) : (
+              <Link href="/products" style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:"#0D1B2A", color:"white", fontWeight:700, padding:"14px 40px", borderRadius:"14px", textDecoration:"none", fontSize:"14px" }}>View Full Catalogue <ArrowRight size={15} /></Link>
+            )}
           </div>
         </div>
       </section>
@@ -384,20 +391,6 @@ export default function Home() {
           <div style={{ position:"relative", borderRadius:"20px", overflow:"hidden", boxShadow:"0 20px 60px rgba(13,27,42,0.15)", border:"1px solid rgba(13,27,42,0.1)", background:"#b8d8e8" }}>
             <div style={{ position:"relative" }}>
               <img src="/exportmap.jpg" alt="Shumitra Export Map" style={{ width:"100%", display:"block", borderRadius:"16px" }} />
-              <div style={{ position:"absolute", inset:0 }}>
-                <div style={{ position:"absolute", left:"67%", top:"47%", transform:"translate(-50%,-50%)" }}>
-                  <div style={{ width:"20px", height:"20px", borderRadius:"50%", background:"rgba(196,147,10,0.3)", position:"absolute", top:"-4px", left:"-4px", animation:"ping 1.5s ease infinite" }}/>
-                  <div style={{ width:"12px", height:"12px", borderRadius:"50%", background:"#C4930A", border:"2px solid white", boxShadow:"0 0 12px rgba(196,147,10,0.8)", position:"relative", zIndex:2 }}/>
-                  <div style={{ position:"absolute", top:"16px", left:"50%", transform:"translateX(-50%)", background:"rgba(13,27,42,0.9)", border:"1px solid #C4930A", borderRadius:"6px", padding:"2px 8px", whiteSpace:"nowrap" }}><span style={{ color:"#C4930A", fontSize:"9px", fontWeight:700 }}>🇮🇳 INDIA</span></div>
-                </div>
-                {[[60,44],[58.5,46],[59.5,45],[61,43],[57.5,47],[46,26],[48,26],[47.5,27.5],[49,25],[46.5,24.5],[18,34],[17,27],[27,64],[76,55],[83,32],[82,71],[49,54],[55,57],[52,73],[54,42],[70,45],[67.5,52]].map(([x,y],i)=>(
-                  <div key={i} style={{ position:"absolute", left:`${x}%`, top:`${y}%`, transform:"translate(-50%,-50%)" }}><div style={{ width:"10px", height:"10px", borderRadius:"50%", background:"#C4930A", border:"1.5px solid white", boxShadow:"0 0 8px rgba(196,147,10,0.7)" }}/></div>
-                ))}
-              </div>
-            </div>
-            <div style={{ background:"white", padding:"14px 24px", display:"flex", alignItems:"center", gap:"24px", borderTop:"1px solid rgba(13,27,42,0.08)", flexWrap:"wrap" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"8px" }}><div style={{ width:"10px", height:"10px", borderRadius:"50%", background:"#C4930A" }}/><span style={{ color:"rgba(13,27,42,0.55)", fontSize:"12px" }}>Export regions</span></div>
-              <div style={{ display:"flex", alignItems:"center", gap:"8px" }}><div style={{ width:"10px", height:"10px", borderRadius:"50%", background:"#C4930A", border:"2px solid white", boxShadow:"0 0 8px rgba(196,147,10,0.8)" }}/><span style={{ color:"rgba(13,27,42,0.55)", fontSize:"12px" }}>India - source country</span></div>
             </div>
           </div>
         </div>
