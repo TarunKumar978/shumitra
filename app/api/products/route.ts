@@ -22,7 +22,7 @@ function isAdminAuthed(req: Request): boolean {
 
 export async function GET() {
   try {
-    const [products] = await db.query("SELECT * FROM products WHERE active = 1 ORDER BY created_at") as any[];
+    const [products] = await db.query("SELECT * FROM products WHERE active = 1 ORDER BY sort_order ASC, created_at ASC") as any[];
     const [varieties] = await db.query("SELECT * FROM varieties") as any[];
     const data = products.map((p: any) => ({
       ...p,

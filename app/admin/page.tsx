@@ -550,6 +550,22 @@ export default function AdminPage() {
                             setDbProducts(ps => ps.filter(p => p.id !== product.id));
                             showToast("🗑️ Product deleted");
                           }} style={{ padding:"8px 14px", borderRadius:"10px", border:"1px solid #fecaca", background:"#fef2f2", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Delete</button>
+                        <button onClick={async () => {
+                          const idx = dbProducts.findIndex((p:any) => p.id === product.id);
+                          if (idx === 0) return;
+                          const newOrder = [...dbProducts];
+                          [newOrder[idx-1], newOrder[idx]] = [newOrder[idx], newOrder[idx-1]];
+                          await adminFetch("/api/reorder", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ type:"products", ids: newOrder.map((p:any) => p.id) }) });
+                          await fetchAll();
+                        }} style={{ padding:"8px 12px", border:"1px solid rgba(13,27,42,0.12)", background:"white", borderRadius:"10px", cursor:"pointer", fontSize:"14px" }}>↑</button>
+                        <button onClick={async () => {
+                          const idx = dbProducts.findIndex((p:any) => p.id === product.id);
+                          if (idx === dbProducts.length-1) return;
+                          const newOrder = [...dbProducts];
+                          [newOrder[idx], newOrder[idx+1]] = [newOrder[idx+1], newOrder[idx]];
+                          await adminFetch("/api/reorder", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ type:"products", ids: newOrder.map((p:any) => p.id) }) });
+                          await fetchAll();
+                        }} style={{ padding:"8px 12px", border:"1px solid rgba(13,27,42,0.12)", background:"white", borderRadius:"10px", cursor:"pointer", fontSize:"14px" }}>↓</button>
                         </div>
                       </div>
                       {(product.varieties||[]).length > 0 && (
@@ -854,6 +870,22 @@ export default function AdminPage() {
                           await fetchHeroSlides();
                           showToast("🗑️ Slide deleted");
                         }} style={{ padding:"8px 16px", border:"1px solid #fecaca", background:"#fef2f2", borderRadius:"10px", cursor:"pointer", fontSize:"12px", fontWeight:600, color:"#ef4444" }}>Delete</button>
+                        <button onClick={async () => {
+                          const idx = dbHeroSlides.findIndex((s:any) => s.id === slide.id);
+                          if (idx === 0) return;
+                          const newOrder = [...dbHeroSlides];
+                          [newOrder[idx-1], newOrder[idx]] = [newOrder[idx], newOrder[idx-1]];
+                          await adminFetch("/api/reorder", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ type:"hero", ids: newOrder.map((s:any) => s.id) }) });
+                          await fetchHeroSlides();
+                        }} style={{ padding:"8px 12px", border:"1px solid rgba(13,27,42,0.12)", background:"white", borderRadius:"10px", cursor:"pointer", fontSize:"14px" }}>↑</button>
+                        <button onClick={async () => {
+                          const idx = dbHeroSlides.findIndex((s:any) => s.id === slide.id);
+                          if (idx === dbHeroSlides.length-1) return;
+                          const newOrder = [...dbHeroSlides];
+                          [newOrder[idx], newOrder[idx+1]] = [newOrder[idx+1], newOrder[idx]];
+                          await adminFetch("/api/reorder", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ type:"hero", ids: newOrder.map((s:any) => s.id) }) });
+                          await fetchHeroSlides();
+                        }} style={{ padding:"8px 12px", border:"1px solid rgba(13,27,42,0.12)", background:"white", borderRadius:"10px", cursor:"pointer", fontSize:"14px" }}>↓</button>
                       </div>
                     </div>
                   )}
