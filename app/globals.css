@@ -9,3 +9,8 @@ h1,h2,h3,h4 { font-family: 'DM Serif Display', Georgia, serif; }
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: #F5F0E8; }
 ::-webkit-scrollbar-thumb { background: #C4930A; border-radius: 3px; }
+
+@keyframes certScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

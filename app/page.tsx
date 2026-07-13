@@ -344,22 +344,31 @@ export default function Home() {
           <p style={{ color:"#C4930A", fontSize:"11px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"6px" }}>Certifications & Registrations</p>
           <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"13px", margin:0 }}>Silasya Fusion Private Limited - Certified Exporter</p>
         </div>
-        <div style={{ display:"flex", gap:"32px", flexWrap:"wrap", justifyContent:"center", alignItems:"center", padding:"16px 0" }}>
-          {[
-            { logo:"/fssai.png", label:"FSSAI Licensed", number:"11226998000230" },
-            { logo:"/apeda.png", label:"APEDA Registered", number:"RCMC/APEDA/28873/2026-27" },
-            { logo:"/spices-board-india.png", label:"Spices Board Certified", number:"CRES/SBCB/28045/2026-27" },
-            { logo:"/iso-9001-2015.png", label:"ISO 9001:2015", number:"SCC/2505SU/2790" },
-            { logo:"/import-export.png", label:"IEC Certified", number:"ABPCS7831N" },
-          ].map((cert, i) => (
-            <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px", minWidth:"100px" }}>
-              <img src={cert.logo} alt={cert.label} style={{ height:"64px", width:"auto", objectFit:"contain", filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }} />
-              <div style={{ textAlign:"center" }}>
-                <p style={{ fontSize:"11px", fontWeight:700, color:"#0D1B2A", margin:"0 0 2px" }}>{cert.label}</p>
-                <p style={{ fontSize:"9px", color:"rgba(13,27,42,0.4)", margin:0 }}>{cert.number}</p>
-              </div>
-            </div>
-            ))}
+        <div style={{ position:"relative", overflow:"hidden" }}>
+          <div style={{ display:"flex", gap:"48px", animation:"certScroll 18s linear infinite", width:"max-content" }}>
+            {[
+                { logo:"/fssai.png", label:"FSSAI Licensed", number:"11226998000230" },
+                { logo:"/apeda.png", label:"APEDA Registered", number:"RCMC/APEDA/28873/2026-27" },
+                { logo:"/spices-board-india.png", label:"Spices Board Certified", number:"CRES/SBCB/28045/2026-27" },
+                { logo:"/iso-9001-2015.png", label:"ISO 9001:2015", number:"SCC/2505SU/2790" },
+                { logo:"/import-export.png", label:"IEC Certified", number:"ABPCS7831N" },
+                { logo:"/fssai.png", label:"FSSAI Licensed", number:"11226998000230" },
+                { logo:"/apeda.png", label:"APEDA Registered", number:"RCMC/APEDA/28873/2026-27" },
+                { logo:"/spices-board-india.png", label:"Spices Board Certified", number:"CRES/SBCB/28045/2026-27" },
+                { logo:"/iso-9001-2015.png", label:"ISO 9001:2015", number:"SCC/2505SU/2790" },
+                { logo:"/import-export.png", label:"IEC Certified", number:"ABPCS7831N" },
+              ].map((cert, i) => (
+                <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px", minWidth:"120px", flexShrink:0 }}>
+                  <img src={cert.logo} alt={cert.label} style={{ height:"64px", width:"auto", objectFit:"contain", filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }} />
+                  <div style={{ textAlign:"center" }}>
+                    <p style={{ fontSize:"11px", fontWeight:700, color:"#0D1B2A", margin:"0 0 2px" }}>{cert.label}</p>
+                    <p style={{ fontSize:"9px", color:"rgba(13,27,42,0.4)", margin:0 }}>{cert.number}</p>
+                  </div>
+                </div>
+              ))}
+          </div>
+          <div style={{ position:"absolute", left:0, top:0, bottom:0, width:"60px", background:"linear-gradient(to right, white, transparent)", zIndex:2, pointerEvents:"none" }} />
+          <div style={{ position:"absolute", right:0, top:0, bottom:0, width:"60px", background:"linear-gradient(to left, white, transparent)", zIndex:2, pointerEvents:"none" }} />
         </div>
       </section>
 
