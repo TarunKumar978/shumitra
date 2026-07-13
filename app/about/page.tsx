@@ -126,23 +126,23 @@ export default function AboutPage() {
             <p style={{ color:"#C4930A", fontSize:"11px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", margin:"0 0 8px" }}>Certifications</p>
             <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"clamp(22px,3vw,36px)", color:"#0D1B2A", margin:0, fontWeight:400 }}>Compliance you can count on</h2>
           </div>
-          <div style={{ position:"relative", overflow:"hidden" }}>
-            <div style={{ display:"flex", gap:"20px", animation:"certScroll 20s linear infinite", width:"max-content" }}>
-              {[{ code:"FSSAI", label:"Food Safety & Standards Authority of India", number:"Lic: 11226998000230", icon:"🛡️", color:"#1E3A5F" },{ code:"APEDA", label:"Agricultural & Processed Food Products Export Development Authority", number:"RCMC/APEDA/28873/2026-27", icon:"🌿", color:"#1A6B3A" },{ code:"Spices Board", label:"Certificate of Registration as Exporter of Spices", number:"CRES/SBCB/28045/2026-27", icon:"🌶️", color:"#C0392B" },{ code:"ISO 9001:2015", label:"Quality Management System", number:"Cert: SCC/2505SU/2790", icon:"✅", color:"#C4930A" },{ code:"IEC", label:"Importer Exporter Code - DGFT", number:"ABPCS7831N", icon:"🏛️", color:"#0D1B2A" },{ code:"FSSAI", label:"Food Safety & Standards Authority of India", number:"Lic: 11226998000230", icon:"🛡️", color:"#1E3A5F" },{ code:"APEDA", label:"Agricultural & Processed Food Products Export Development Authority", number:"RCMC/APEDA/28873/2026-27", icon:"🌿", color:"#1A6B3A" },{ code:"Spices Board", label:"Certificate of Registration as Exporter of Spices", number:"CRES/SBCB/28045/2026-27", icon:"🌶️", color:"#C0392B" },{ code:"ISO 9001:2015", label:"Quality Management System", number:"Cert: SCC/2505SU/2790", icon:"✅", color:"#C4930A" },{ code:"IEC", label:"Importer Exporter Code - DGFT", number:"ABPCS7831N", icon:"🏛️", color:"#0D1B2A" }].map((cert, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:"16px", background:"white", border:"1px solid rgba(13,27,42,0.07)", borderRadius:"18px", padding:"20px 24px", flexShrink:0, minWidth:"280px" }}>
-                  <div style={{ width:"48px", height:"48px", borderRadius:"12px", background:cert.color, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", flexShrink:0 }}>{cert.icon}</div>
-                  <div>
-                    <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"4px" }}><p style={{ fontWeight:700, color:"#0D1B2A", fontSize:"13px", margin:0 }}>{cert.code}</p><span style={{ fontSize:"9px", background:"rgba(26,107,58,0.1)", color:"#1A6B3A", borderRadius:"6px", padding:"2px 6px", fontWeight:700 }}>VERIFIED</span></div>
-                    <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"11px", margin:"0 0 3px", lineHeight:1.4 }}>{cert.label}</p>
-                    <p style={{ color:"#C4930A", fontSize:"10px", fontWeight:700, fontFamily:"monospace", margin:0 }}>{cert.number}</p>
-                  </div>
-                </div>
-              ))}
+          <div style={{ display:"flex", gap:"32px", flexWrap:"wrap", justifyContent:"center", alignItems:"center", padding:"16px 0" }}>
+          {[
+            { logo:"/fssai.png", label:"FSSAI Licensed", number:"11226998000230" },
+            { logo:"/apeda.png", label:"APEDA Registered", number:"RCMC/APEDA/28873/2026-27" },
+            { logo:"/spices-board-india.png", label:"Spices Board Certified", number:"CRES/SBCB/28045/2026-27" },
+            { logo:"/iso-9001-2015.png", label:"ISO 9001:2015", number:"SCC/2505SU/2790" },
+            { logo:"/import-export.png", label:"IEC Certified", number:"ABPCS7831N" },
+          ].map((cert, i) => (
+            <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px", minWidth:"100px" }}>
+              <img src={cert.logo} alt={cert.label} style={{ height:"64px", width:"auto", objectFit:"contain", filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }} />
+              <div style={{ textAlign:"center" }}>
+                <p style={{ fontSize:"11px", fontWeight:700, color:"#0D1B2A", margin:"0 0 2px" }}>{cert.label}</p>
+                <p style={{ fontSize:"9px", color:"rgba(13,27,42,0.4)", margin:0 }}>{cert.number}</p>
+              </div>
             </div>
-            <div style={{ position:"absolute", left:0, top:0, bottom:0, width:"60px", background:"linear-gradient(to right, #F5F0E8, transparent)", zIndex:2, pointerEvents:"none" }} />
-            <div style={{ position:"absolute", right:0, top:0, bottom:0, width:"60px", background:"linear-gradient(to left, #F5F0E8, transparent)", zIndex:2, pointerEvents:"none" }} />
-          </div>
-          <style>{`@keyframes certScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
+          ))}
+        </div>
         </div>
       </div>
 

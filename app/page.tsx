@@ -344,40 +344,22 @@ export default function Home() {
           <p style={{ color:"#C4930A", fontSize:"11px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"6px" }}>Certifications & Registrations</p>
           <p style={{ color:"rgba(13,27,42,0.4)", fontSize:"13px", margin:0 }}>Silasya Fusion Private Limited - Certified Exporter</p>
         </div>
-        <div style={{ position:"relative", overflow:"hidden" }}>
-          <div style={{ display:"flex", gap:"24px", animation:"certScroll 18s linear infinite", width:"max-content" }}>
-            {[{ code:"FSSAI", label:"Food Safety & Standards Authority of India", number:"Lic: 11226998000230", icon:"🛡️", color:"#1E3A5F" },{ code:"APEDA", label:"Agricultural & Processed Food Products Export Development Authority", number:"RCMC/APEDA/28873/2026-27", icon:"🌿", color:"#1A6B3A" },{ code:"Spices Board", label:"Certificate of Registration as Exporter of Spices", number:"CRES/SBCB/28045/2026-27", icon:"🌶️", color:"#C0392B" },{ code:"ISO 9001:2015", label:"Quality Management System - QFS Management Systems LLP", number:"Cert: SCC/2505SU/2790", icon:"✅", color:"#C4930A" },{ code:"IEC", label:"Importer Exporter Code - DGFT, Ministry of Commerce", number:"ABPCS7831N", icon:"🏛️", color:"#0D1B2A" },{ code:"FSSAI", label:"Food Safety & Standards Authority of India", number:"Lic: 11226998000230", icon:"🛡️", color:"#1E3A5F" },{ code:"APEDA", label:"Agricultural & Processed Food Products Export Development Authority", number:"RCMC/APEDA/28873/2026-27", icon:"🌿", color:"#1A6B3A" },{ code:"Spices Board", label:"Certificate of Registration as Exporter of Spices", number:"CRES/SBCB/28045/2026-27", icon:"🌶️", color:"#C0392B" },{ code:"ISO 9001:2015", label:"Quality Management System - QFS Management Systems LLP", number:"Cert: SCC/2505SU/2790", icon:"✅", color:"#C4930A" },{ code:"IEC", label:"Importer Exporter Code - DGFT, Ministry of Commerce", number:"ABPCS7831N", icon:"🏛️", color:"#0D1B2A" }].map((cert, i) => (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:"16px", background:"#F5F0E8", border:"1px solid rgba(13,27,42,0.07)", borderRadius:"18px", padding:"20px 28px", flexShrink:0, minWidth:"300px" }}>
-                <div style={{ width:"52px", height:"52px", borderRadius:"14px", background:cert.color, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"22px", flexShrink:0, boxShadow:`0 4px 14px ${cert.color}40` }}>{cert.icon}</div>
-                <div>
-                  <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"4px" }}><p style={{ fontWeight:700, color:"#0D1B2A", fontSize:"14px", margin:0 }}>{cert.code}</p><span style={{ fontSize:"9px", background:"rgba(26,107,58,0.1)", color:"#1A6B3A", borderRadius:"6px", padding:"2px 6px", fontWeight:700 }}>VERIFIED</span></div>
-                  <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"11px", margin:"0 0 4px", lineHeight:1.4 }}>{cert.label}</p>
-                  <p style={{ color:"#C4930A", fontSize:"10px", fontWeight:700, fontFamily:"monospace", margin:0 }}>{cert.number}</p>
-                </div>
+        <div style={{ display:"flex", gap:"32px", flexWrap:"wrap", justifyContent:"center", alignItems:"center", padding:"16px 0" }}>
+          {[
+            { logo:"/fssai.png", label:"FSSAI Licensed", number:"11226998000230" },
+            { logo:"/apeda.png", label:"APEDA Registered", number:"RCMC/APEDA/28873/2026-27" },
+            { logo:"/spices-board-india.png", label:"Spices Board Certified", number:"CRES/SBCB/28045/2026-27" },
+            { logo:"/iso-9001-2015.png", label:"ISO 9001:2015", number:"SCC/2505SU/2790" },
+            { logo:"/import-export.png", label:"IEC Certified", number:"ABPCS7831N" },
+          ].map((cert, i) => (
+            <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px", minWidth:"100px" }}>
+              <img src={cert.logo} alt={cert.label} style={{ height:"64px", width:"auto", objectFit:"contain", filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }} />
+              <div style={{ textAlign:"center" }}>
+                <p style={{ fontSize:"11px", fontWeight:700, color:"#0D1B2A", margin:"0 0 2px" }}>{cert.label}</p>
+                <p style={{ fontSize:"9px", color:"rgba(13,27,42,0.4)", margin:0 }}>{cert.number}</p>
               </div>
+            </div>
             ))}
-          </div>
-          <div style={{ position:"absolute", left:0, top:0, bottom:0, width:"60px", background:"linear-gradient(to right,white,transparent)", zIndex:2, pointerEvents:"none" }} />
-          <div style={{ position:"absolute", right:0, top:0, bottom:0, width:"60px", background:"linear-gradient(to left,white,transparent)", zIndex:2, pointerEvents:"none" }} />
-        </div>
-        <style>{`@keyframes certScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
-      </section>
-
-      <section style={{ padding:"48px 0", background:"#F5F0E8" }}>
-        <div style={{ maxWidth:"1280px", margin:"0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
-          <div style={{ textAlign:"center", marginBottom:"36px" }}>
-            <p style={{ color:"#C4930A", fontSize:"11px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"10px" }}>How We Work</p>
-            <h2 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize:"clamp(24px,3.5vw,42px)", color:"#0D1B2A", margin:0 }}>From Enquiry to Delivery</h2>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "repeat(3,1fr)" : "repeat(auto-fit, minmax(140px, 1fr))", gap:"16px" }}>
-            {[{ n:"01", t:"Inquiry", d:"Share product, quantity & destination" },{ n:"02", t:"Quote", d:"Pricing & specs within 24 hrs" },{ n:"03", t:"Sample", d:"Physical sample dispatched" },{ n:"04", t:"Order", d:"PO confirmed, QC begins" },{ n:"05", t:"Delivery", d:"FOB/CIF with full documentation" }].map((s, idx) => (
-              <div key={s.n} style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
-                <div style={{ width: isMobile ? "44px" : "54px", height: isMobile ? "44px" : "54px", borderRadius:"14px", background:"#0D1B2A", color:"#E8A020", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"monospace", fontWeight:700, fontSize: isMobile ? "12px" : "14px", marginBottom:"12px", boxShadow:"0 6px 18px rgba(13,27,42,0.15)" }}>{s.n}</div>
-                <h4 style={{ fontFamily:"DM Serif Display,Georgia,serif", fontSize: isMobile ? "12px" : "16px", color:"#0D1B2A", marginBottom:"4px" }}>{s.t}</h4>
-                {!isMobile && <p style={{ color:"rgba(13,27,42,0.45)", fontSize:"12px", lineHeight:1.55, margin:0 }}>{s.d}</p>}
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
